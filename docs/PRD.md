@@ -33,6 +33,18 @@ Current machine learning work is slowed by four recurring bottlenecks:
 
 ---
 
+## 2.5. Product Principles
+
+1. **Start narrow, then expand.** Focus first on predefined datasets and supervised tabular ML instead of open-ended dataset discovery or every ML modality.
+2. **Small loops beat giant plans.** Planning, execution, and correction happen in short, inspectable cycles. Each iteration should be attributable.
+3. **Deterministic analysis first, agentic reasoning second.** Agents lean on scripts and structured artifacts, not free-form guesses. If a question can be answered by code, statistics, or schema inspection, the deterministic layer answers it.
+4. **Every run must leave a trail.** Decisions, code versions, metrics, and reviewer outputs are stored in a reusable, auditable format. No ephemeral reasoning.
+5. **Human review remains first class.** The system helps a principal data scientist inspect the logic, not hide it. Artifacts are the communication layer.
+6. **Reuse research deliberately.** Papers, repos, and internal learnings are indexed into a knowledge base the system consults repeatedly — not dumped as loose links.
+7. **Avoid context bloat.** Prefer scripts, markdown, JSON, and YAML artifacts over notebooks. Summaries passed to agents, not raw logs.
+
+---
+
 ## 3. Goals & Success Criteria
 
 ### Primary Goals
@@ -95,6 +107,10 @@ Current machine learning work is slowed by four recurring bottlenecks:
 ### Architectural Position
 
 The system is an orchestrated loop with deterministic analysis and reporting components wrapped by narrow, role-specific agents. It is not a single autonomous blob. It is a controlled workflow where each stage emits structured artifacts that become the inputs to the next stage.
+
+### Design Principles
+
+1. **Provider-agnostic seams.** The architecture assumes Claude Code models for orchestration but agent interfaces should not hard-code Claude-specific behaviour. No abstraction layer is built in v1, but the design leaves explicit extension points for future open-source model routing (e.g., via Ollama or alternative API providers). When that time comes, routine tasks like code generation or simple reviews could be routed to smaller models while reserving frontier models for planning and complex reasoning.
 
 ### Logical Layers
 
@@ -249,7 +265,8 @@ Each agent owns one decision class, receives structured file inputs, and emits m
 - Correlation analysis (numerical and categorical)
 - Target variable identification and validation
 - Leakage-risk flagging (identifier columns, future-leak candidates)
-- Dataset semantic description at dataset and column level
+- **Semantic layer construction.** Generate a rich description for every column (data type, role, domain meaning, value distribution summary). If no user-provided semantic hints exist, the analyser produces best-guess descriptions and flags each one for human review in the profile report. This semantic layer is a first-class output — downstream agents (Planner, Coder, Reviewer) rely on it to reason about features with domain context rather than raw column names.
+- Dataset-level semantic description (what is this dataset, its domain, its purpose)
 - Class imbalance assessment (classification tasks)
 - Feature-risk flags (skew, zero-variance, near-duplicates)
 
@@ -366,6 +383,7 @@ runs/iteration-<n>/src/
 - `runs/iteration-<n>/execution/log.txt` — full stdout/stderr
 - `runs/iteration-<n>/execution/manifest.json` — runtime metadata, exit status
 - `runs/iteration-<n>/execution/retry-log.jsonl` — repair attempt history
+- `runs/iteration-<n>/outputs/learning_curves.json` — epoch/iteration-level train and validation metrics captured during training (e.g., loss per boosting round, validation metric per epoch)
 
 **Two-Stage Debugging (DS-STAR inspired):**
 
@@ -403,6 +421,7 @@ runs/iteration-<n>/src/
 - **Actual vs predicted:** Scatter plots (regression), confusion matrix (classification)
 - **Segment analysis:** Performance breakdown by key features or data slices
 - **Feature importance:** Permutation importance or model-native importance scores
+- **Per-feature diagnostic plots:** For the top-N most important features, overlay actual vs predicted values against the feature axis to visualise where the model captures or misses the underlying relationship. This is the key visual a principal data scientist uses to spot systematic model failures.
 - **Error distribution:** Residual analysis (regression), misclassification patterns (classification)
 - **Calibration assessment:** Probability calibration curves (classification)
 - **Leakage indicators:** Suspiciously high metrics, feature importance anomalies
@@ -538,6 +557,8 @@ estimated_remaining_iterations: <int>
 
 **Phase recommendation:** Keep as a Phase 2 component until the core local loop is stable. In Phase 1, the knowledge base is populated manually.
 
+**Implementation note:** When fetching arXiv papers, prefer HTML version URLs (`https://arxiv.org/html/<id>`) over PDF URLs (`https://arxiv.org/pdf/<id>`). The PDF URL returns raw binary that indexes as garbage; the HTML version converts cleanly to searchable markdown.
+
 **Non-responsibilities:**
 - Autonomous web crawling without human oversight
 - Replacing the Planner's decision-making role
@@ -654,6 +675,20 @@ estimated_remaining_iterations: <int>
 - **Human interrupt:** User can pause the loop at any point and inject new direction
 - **Final review:** Human approves or rejects the final candidate before packaging
 
+### Finalization Artifacts
+
+When the Router decides `finalize`, the system produces a defined output package:
+
+```
+projects/<project-id>/final/
+├── model/                  # Chosen model artifact (serialised) + metadata
+├── summary.md              # Winning approach narrative: strategy, evidence, caveats,
+│                           # performance trajectory, and recommendation
+└── submission/             # Optional: competition submission file if applicable
+```
+
+The final summary must be self-contained — a senior DS should be able to read `summary.md` alone and understand what was tried, what won, and why.
+
 ---
 
 ## 8. Knowledge Base (Wiki) Design
@@ -676,6 +711,7 @@ knowledge-base/
 │   ├── gradient-boosting-tuning.md
 │   ├── ensemble-stacking.md
 │   ├── feature-selection-methods.md
+│   ├── unsupervised-clustering.md
 │   └── ...
 ├── evaluations/
 │   ├── classification-metrics-guide.md
@@ -1121,6 +1157,21 @@ Traditional AutoML tools treat ML as a search problem: enumerate configurations,
 - Full code stored per iteration (not just diffs)
 - Environment metadata (Python version, OS, package versions) in manifest
 
+### Testing Strategy
+
+Each component type has a defined testing approach to ensure reliability without requiring full end-to-end runs:
+
+| Component | Testing Approach |
+|---|---|
+| Dataset Analyser | Schema fixtures, edge-case datasets (all nulls, single row, high cardinality), known leakage examples |
+| Planner | Simulation tests using fixed upstream artifacts; checks that plans stay within allowed action boundaries |
+| Coder (Plan-to-Code) | Template conformance tests; code-generation smoke tests against known plans |
+| Executor & Debugger | Retry-limit tests; failure classification tests (syntax vs runtime vs logic errors) |
+| Model Report Builder | Metric-calculation tests; artifact-presence tests; report schema validation |
+| Reviewer & Router | Fixture-based decision tests using known model reports; regression tests on plateau detection and escalation behaviour |
+| Project Memory | Historical consistency tests; retrieval quality checks against planted entries |
+| Knowledge Base | Entry schema validation; frontmatter conformance tests |
+
 ---
 
 ## 16. Risks & Mitigations
@@ -1142,6 +1193,10 @@ Traditional AutoML tools treat ML as a search problem: enumerate configurations,
 
 ## 17. Milestone Plan
 
+### Milestone Scoping Principle
+
+Each minor milestone should be scoped to a single reviewable PR. PRs must be targeted and testable — not massive multi-hundred-line changes. The goal is that each minor milestone can be reviewed together, tested against a simulation scenario or dataset, and wrapped with appropriate tests. No ultra-atomic PRs either, but nothing that requires scrolling through hundreds of lines of unrelated changes.
+
 ### M0 — Documentation & Contracts Foundation
 **Type:** Major | **Outcome:** Clear PRD, specs, artifact contracts, and repository structure.
 
@@ -1151,6 +1206,7 @@ Traditional AutoML tools treat ML as a search problem: enumerate configurations,
 | M0.2 | Artifact templates for project metadata, plans, reviews, memory logs |
 | M0.3 | Repository folders and placeholder structure |
 | M0.4 | Coding rules and artifact contract docs |
+| M0.5 | Claude Code best-practices skill: curate official Claude Code documentation links (agents, skills, hooks, rules) into a trimmed-down best-practices reference stored in `references/claude-code-official/`. Include a concise guide with clear do's and don'ts distilled from official docs and blog posts, with pointers to the full documentation for detail. This reference is consumed as context by any agent or skill that builds or modifies Claude Code primitives, preventing the mediocre output that occurs without grounding in the official docs. |
 
 ### M1 — Single-Project Runtime Skeleton
 **Type:** Major | **Outcome:** A project can be initialised and run through an empty but structured loop.
@@ -1278,22 +1334,24 @@ Candidate tracks (prioritised after M10):
 4. **Obsidian integration.** Export knowledge base to Obsidian-compatible format with bidirectional links, enabling human browsing and curation.
 5. **Bayesian hyperparameter optimisation.** Integrate Optuna for focused hyperparameter search within the agent-chosen model family.
 6. **SHAP integration.** Richer explainability in model reports with SHAP value analysis.
+7. **Parametric distribution identification.** Extend the Dataset Analyser to fit parametric distribution families (normal, gamma, log-normal, etc.) to numerical features with goodness-of-fit scores. Optionally characterise feature-target relationships with simple parametric fits (linear, polynomial) and report R² quality. Useful for both human understanding and Planner decision-making about transformations.
+8. **Script-to-notebook conversion.** Use a tool like jupytext to convert Python scripts into notebook format for human readability. Not a core workflow requirement, but a convenience for reviewing experiment code in a more visual format.
 
 ### Medium-Term
 
-7. **Multi-provider model routing.** Route routine tasks (code generation, simple reviews) to smaller/cheaper models while reserving Opus for planning and complex reasoning.
-8. **RAG-based knowledge retrieval.** Embed wiki entries and retrieve semantically rather than by filename matching.
-9. **Ensemble orchestration.** Planner can propose multi-model ensembles; Coder can generate stacking/blending code.
-10. **Multi-table dataset support.** Handle relational datasets with join strategies proposed by the Planner.
-11. **Custom metric plugins.** User-defined evaluation metrics with automatic integration into the reporting pipeline.
+9. **Multi-provider model routing.** Route routine tasks (code generation, simple reviews) to smaller/cheaper models while reserving Opus for planning and complex reasoning.
+10. **RAG-based knowledge retrieval.** Embed wiki entries and retrieve semantically rather than by filename matching.
+11. **Ensemble orchestration.** Planner can propose multi-model ensembles; Coder can generate stacking/blending code.
+12. **Multi-table dataset support.** Handle relational datasets with join strategies proposed by the Planner.
+13. **Custom metric plugins.** User-defined evaluation metrics with automatic integration into the reporting pipeline.
 
 ### Long-Term
 
-12. **Internal team adoption.** Package the system for use by a data science team on internal business problems, with shared knowledge base across projects.
-13. **Competition automation.** End-to-end Kaggle competition workflow including submission generation and leaderboard tracking.
-14. **Multimodal ML.** Extend beyond tabular to text, image, and mixed-modal problems.
-15. **Continuous learning.** System improves its own planning and reviewing quality based on historical outcomes across many projects.
-16. **Deployment pipeline.** Generate deployment-ready model packages (Docker, API endpoints) from final candidates.
+14. **Internal team adoption.** Package the system for use by a data science team on internal business problems, with shared knowledge base across projects.
+15. **Competition automation.** End-to-end Kaggle competition workflow including submission generation and leaderboard tracking.
+16. **Multimodal ML.** Extend beyond tabular to text, image, and mixed-modal problems.
+17. **Continuous learning.** System improves its own planning and reviewing quality based on historical outcomes across many projects.
+18. **Deployment pipeline.** Generate deployment-ready model packages (Docker, API endpoints) from final candidates.
 
 ---
 
