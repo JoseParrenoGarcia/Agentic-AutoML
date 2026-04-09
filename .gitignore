@@ -47,3 +47,7 @@ yarn-error.log*
 # OS
 Thumbs.db
 .claude/settings.local.json
+
+# Data files (immutable raw data stored locally only)
+projects/*/data/raw/
+projects/*/data/processed/

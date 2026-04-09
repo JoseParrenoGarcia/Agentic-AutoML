@@ -209,18 +209,10 @@ The system is an orchestrated loop with deterministic analysis and reporting com
 │   ├── action-router/
 │   ├── local-maxima-challenger/
 │   └── researcher/
-├── skills/
-│   ├── pdf-import/
-│   ├── dataset-analysis/
-│   ├── report-formatting/
-│   └── memory-update/
-├── rules/
-│   ├── coding-rules.md
-│   ├── artifact-contracts.md
-│   └── wiki-entry-rules.md
-├── hooks/
-│   ├── post-run-memory-update/
-│   └── wiki-scribe/
+├── .claude/
+│   ├── skills/          # Claude Code skills (authoring guides + workflow skills)
+│   ├── rules/           # Behavioural rules (coding-rules.md, artifact-contracts.md, etc.)
+│   └── hooks/           # Automation hooks (post-run-memory-update, wiki-scribe)
 ├── templates/
 │   ├── project/
 │   ├── run/
@@ -1202,14 +1194,16 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M0.1 | PRD and spec-kit documents finalised |
-| M0.2 | Artifact templates for project metadata, plans, reviews, memory logs |
-| M0.3 | Repository folders and placeholder structure |
-| M0.4 | Coding rules and artifact contract docs |
-| M0.5 | Claude Code best-practices skill: curate official Claude Code documentation links (agents, skills, hooks, rules) into a trimmed-down best-practices reference stored in `references/claude-code-official/`. Include a concise guide with clear do's and don'ts distilled from official docs and blog posts, with pointers to the full documentation for detail. This reference is consumed as context by any agent or skill that builds or modifies Claude Code primitives, preventing the mediocre output that occurs without grounding in the official docs. |
+| M0.1 ✅ | PRD and spec-kit documents finalised |
+| M0.2 | Lightweight artifact templates — `project.yaml`, `iteration-<n>.yaml` plan, and `run-history.jsonl` entry. Keep minimal; flesh out as M2 reveals actual field requirements. |
+| M0.3 | Minimal top-level folder scaffold: `agents/`, `references/`, `knowledge-base/`, `templates/`, `src/`, `projects/` — each with a single-line README stub. No subdirectories; those are created by the milestone that needs them. |
+| M0.4 | Lightweight `rules/coding-rules.md` and `rules/artifact-contracts.md` stubs — establish structure and key constraints now, expand with concrete detail as M2 and M3 reveal actual needs. |
+| M0.5 ✅ | Claude Code authoring skills: four skills in `.claude/skills/` (`create-agent`, `create-hook`, `create-rule`, `create-skill`) each containing DOs, DON'Ts, anti-patterns, and official reference links for building Claude Code primitives. Enforced at authoring time via `authoring.md` rule. These skills serve as the living best-practices reference consumed whenever a primitive is created or significantly restructured. |
 
 ### M1 — Single-Project Runtime Skeleton
 **Type:** Major | **Outcome:** A project can be initialised and run through an empty but structured loop.
+
+> **Status: Deferred.** M1 will be built incrementally inside M2 rather than as a standalone milestone. M2.1 will introduce a minimal `projects/<sample>/experiment.yaml` bootstrap. Full runtime skeleton (state loader/saver, iteration controller, smoke tests) will be designed once M2 teaches what the loop actually needs. M1 milestones below remain as a reference for what must eventually exist.
 
 | Minor Milestone | Deliverable |
 |---|---|
