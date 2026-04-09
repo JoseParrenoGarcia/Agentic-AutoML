@@ -40,7 +40,21 @@ A Claude Code–orchestrated system for iterative ML experimentation on tabular 
 
 Behavioural and maintenance rules live in `.claude/rules/` (auto-loaded each session):
 
+- `authoring.md` — guardrail: load the correct authoring skill before creating/restructuring any agent, skill, hook, rule, or memory file
 - `coding-rules.md` — Python style, error handling, audit trail guardrails (pending)
 - `artifact-contracts.md` — JSON schema and structure guarantees for all outputs (pending)
 - `ml-experiment-constraints.md` — data validation, reproducibility, benchmark tracking (pending)
 - `maintenance.md` — what to update when significant changes happen (pending)
+
+---
+
+## Authoring Skills
+
+Skills for correctly building Claude Code primitives. Auto-activate on creation/restructure intent.
+
+| Skill | Trigger | Path |
+|-------|---------|------|
+| `create-agent` | "create an agent", "new agent", "add an agent to agents/" | `.claude/skills/create-agent/SKILL.md` |
+| `create-skill` | "create a skill", "new SKILL.md", "add a skill to .claude/skills/" | `.claude/skills/create-skill/SKILL.md` |
+| `create-hook` | "add a hook", "create a hook", "automate on tool use / task completion" | `.claude/skills/create-hook/SKILL.md` |
+| `create-rule` | "create a rule", "add a rule to .claude/rules/", "write a behavioral rule" | `.claude/skills/create-rule/SKILL.md` |
