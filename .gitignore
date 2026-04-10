@@ -47,3 +47,17 @@ yarn-error.log*
 # OS
 Thumbs.db
 .claude/settings.local.json
+
+# Data files (immutable raw data stored locally only)
+projects/*/data/raw/
+projects/*/data/processed/
+
+# Generated artifacts
+projects/*/artifacts/
+
+# pytest tmp_path directories
+pytest-of-*/
+
+# Claude Code / MCP plugin artifacts (leaked into project root)
+context-mode-guidance-*/
+node-compile-cache/
