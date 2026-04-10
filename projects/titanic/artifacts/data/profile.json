@@ -1,0 +1,249 @@
+{
+  "profiler_version": "0.1.0",
+  "generated_at": "2026-04-10T10:30:44.558258+00:00",
+  "source": {
+    "path": "projects/titanic/data/raw/train.csv",
+    "sha256": "7d118fef8b6ccf7f81111877bc388536f7b1e498a655e3d649d19aaa010e9f6f",
+    "row_count": 891,
+    "column_count": 12,
+    "file_size_bytes": 61194
+  },
+  "schema": {
+    "columns": [
+      {
+        "name": "PassengerId",
+        "pandas_dtype": "int64",
+        "inferred_semantic_type": "identifier",
+        "sample_values": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "name": "Survived",
+        "pandas_dtype": "int64",
+        "inferred_semantic_type": "binary_target",
+        "sample_values": [
+          0,
+          1,
+          1
+        ]
+      },
+      {
+        "name": "Pclass",
+        "pandas_dtype": "int64",
+        "inferred_semantic_type": "low_cardinality_integer",
+        "sample_values": [
+          3,
+          1,
+          3
+        ]
+      },
+      {
+        "name": "Name",
+        "pandas_dtype": "str",
+        "inferred_semantic_type": "high_cardinality_categorical",
+        "sample_values": [
+          "Braund, Mr. Owen Harris",
+          "Cumings, Mrs. John Bradley (Florence Briggs Thayer)",
+          "Heikkinen, Miss. Laina"
+        ]
+      },
+      {
+        "name": "Sex",
+        "pandas_dtype": "str",
+        "inferred_semantic_type": "low_cardinality_categorical",
+        "sample_values": [
+          "male",
+          "female",
+          "female"
+        ]
+      },
+      {
+        "name": "Age",
+        "pandas_dtype": "float64",
+        "inferred_semantic_type": "continuous_numeric",
+        "sample_values": [
+          22.0,
+          38.0,
+          26.0
+        ]
+      },
+      {
+        "name": "SibSp",
+        "pandas_dtype": "int64",
+        "inferred_semantic_type": "low_cardinality_integer",
+        "sample_values": [
+          1,
+          1,
+          0
+        ]
+      },
+      {
+        "name": "Parch",
+        "pandas_dtype": "int64",
+        "inferred_semantic_type": "low_cardinality_integer",
+        "sample_values": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "Ticket",
+        "pandas_dtype": "str",
+        "inferred_semantic_type": "high_cardinality_categorical",
+        "sample_values": [
+          "A/5 21171",
+          "PC 17599",
+          "STON/O2. 3101282"
+        ]
+      },
+      {
+        "name": "Fare",
+        "pandas_dtype": "float64",
+        "inferred_semantic_type": "continuous_numeric",
+        "sample_values": [
+          7.25,
+          71.2833,
+          7.925
+        ]
+      },
+      {
+        "name": "Cabin",
+        "pandas_dtype": "str",
+        "inferred_semantic_type": "high_cardinality_categorical",
+        "sample_values": [
+          "C85",
+          "C123",
+          "E46"
+        ]
+      },
+      {
+        "name": "Embarked",
+        "pandas_dtype": "str",
+        "inferred_semantic_type": "low_cardinality_categorical",
+        "sample_values": [
+          "S",
+          "C",
+          "S"
+        ]
+      }
+    ]
+  },
+  "basic_stats": {
+    "PassengerId": {
+      "count": 891,
+      "mean": 446.0,
+      "std": 257.3538420152301,
+      "min": 1.0,
+      "p25": 223.5,
+      "p50": 446.0,
+      "p75": 668.5,
+      "max": 891.0
+    },
+    "Survived": {
+      "count": 891,
+      "mean": 0.3838383838383838,
+      "std": 0.4865924542648575,
+      "min": 0.0,
+      "p25": 0.0,
+      "p50": 0.0,
+      "p75": 1.0,
+      "max": 1.0
+    },
+    "Pclass": {
+      "count": 891,
+      "mean": 2.308641975308642,
+      "std": 0.836071240977049,
+      "min": 1.0,
+      "p25": 2.0,
+      "p50": 3.0,
+      "p75": 3.0,
+      "max": 3.0
+    },
+    "Name": {
+      "count": 891,
+      "unique": 891,
+      "top": "Braund, Mr. Owen Harris",
+      "freq": 1
+    },
+    "Sex": {
+      "count": 891,
+      "unique": 2,
+      "top": "male",
+      "freq": 577
+    },
+    "Age": {
+      "count": 714,
+      "mean": 29.69911764705882,
+      "std": 14.526497332334042,
+      "min": 0.42,
+      "p25": 20.125,
+      "p50": 28.0,
+      "p75": 38.0,
+      "max": 80.0
+    },
+    "SibSp": {
+      "count": 891,
+      "mean": 0.5230078563411896,
+      "std": 1.1027434322934317,
+      "min": 0.0,
+      "p25": 0.0,
+      "p50": 0.0,
+      "p75": 1.0,
+      "max": 8.0
+    },
+    "Parch": {
+      "count": 891,
+      "mean": 0.38159371492704824,
+      "std": 0.8060572211299483,
+      "min": 0.0,
+      "p25": 0.0,
+      "p50": 0.0,
+      "p75": 0.0,
+      "max": 6.0
+    },
+    "Ticket": {
+      "count": 891,
+      "unique": 681,
+      "top": "347082",
+      "freq": 7
+    },
+    "Fare": {
+      "count": 891,
+      "mean": 32.204207968574636,
+      "std": 49.6934285971809,
+      "min": 0.0,
+      "p25": 7.9104,
+      "p50": 14.4542,
+      "p75": 31.0,
+      "max": 512.3292
+    },
+    "Cabin": {
+      "count": 204,
+      "unique": 147,
+      "top": "G6",
+      "freq": 4
+    },
+    "Embarked": {
+      "count": 889,
+      "unique": 3,
+      "top": "S",
+      "freq": 644
+    }
+  },
+  "m2_sections_complete": [
+    "schema",
+    "basic_stats"
+  ],
+  "m2_sections_pending": [
+    "null_analysis",
+    "cardinality",
+    "outliers",
+    "correlation",
+    "target_validation",
+    "leakage_flags"
+  ]
+}

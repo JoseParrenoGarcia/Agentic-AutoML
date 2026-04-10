@@ -1,0 +1,7 @@
+name: titanic
+description: Titanic survival prediction (Kaggle)
+target_column: Survived
+task_type: binary_classification
+data:
+  train: data/raw/train.csv
+  test: data/raw/test.csv

@@ -1102,31 +1102,12 @@ Traditional AutoML tools treat ML as a search problem: enumerate configurations,
 - **Language:** Python 3.11+
 - **Orchestration:** Claude Code (agents, skills, hooks, rules)
 - **LLM:** Claude (Sonnet for routine tasks, Opus for planning/review)
-- **Package management:** pip + virtual environments (one per project)
+- **Package management:** pip + single shared virtual environment (`.venv/` at repo root)
 - **OS:** macOS (primary development), Linux (CI/production)
 
-### Core Python Dependencies
+### Dependencies
 
-| Package | Purpose |
-|---|---|
-| pandas | Data loading and manipulation |
-| numpy | Numerical operations |
-| scikit-learn | Classical ML models, metrics, preprocessing |
-| lightgbm | Gradient boosting |
-| xgboost | Gradient boosting (alternative) |
-| catboost | Gradient boosting (categorical-native) |
-| matplotlib / seaborn | Visualisation |
-| pyyaml | YAML artifact reading/writing |
-| jsonlines | JSONL experiment tracking |
-
-### Optional Dependencies (Phase 2+)
-
-| Package | Purpose |
-|---|---|
-| shap | Explainability |
-| optuna | Bayesian hyperparameter optimisation |
-| autogluon | Benchmarking comparison baseline |
-| sentence-transformers | Knowledge base RAG embeddings |
+Dependencies are declared in `requirements.txt` at repo root and added as each milestone requires them.
 
 ### Performance Requirements
 
@@ -1144,7 +1125,7 @@ Traditional AutoML tools treat ML as a search problem: enumerate configurations,
 ### Reproducibility Requirements
 
 - All random seeds recorded in config and fixed across runs
-- Python environment captured in `requirements.txt` per iteration
+- Python environment captured in `requirements.txt` at repo root
 - Dataset version (hash) recorded in manifest
 - Full code stored per iteration (not just diffs)
 - Environment metadata (Python version, OS, package versions) in manifest
