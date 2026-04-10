@@ -1,6 +1,6 @@
 {
   "profiler_version": "0.1.0",
-  "generated_at": "2026-04-10T10:30:44.558258+00:00",
+  "generated_at": "2026-04-10T12:12:47.830667+00:00",
   "source": {
     "path": "projects/titanic/data/raw/train.csv",
     "sha256": "7d118fef8b6ccf7f81111877bc388536f7b1e498a655e3d649d19aaa010e9f6f",
@@ -8,242 +8,484 @@
     "column_count": 12,
     "file_size_bytes": 61194
   },
-  "schema": {
-    "columns": [
-      {
-        "name": "PassengerId",
-        "pandas_dtype": "int64",
-        "inferred_semantic_type": "identifier",
-        "sample_values": [
-          1,
-          2,
-          3
-        ]
+  "columns": [
+    {
+      "name": "PassengerId",
+      "pandas_dtype": "int64",
+      "inferred_semantic_type": "identifier",
+      "sample_values": [
+        1,
+        2,
+        3
+      ],
+      "basic_stats": {
+        "count": 891,
+        "mean": 446.0,
+        "std": 257.3538420152301,
+        "min": 1.0,
+        "p25": 223.5,
+        "p50": 446.0,
+        "p75": 668.5,
+        "max": 891.0
       },
-      {
-        "name": "Survived",
-        "pandas_dtype": "int64",
-        "inferred_semantic_type": "binary_target",
-        "sample_values": [
-          0,
-          1,
-          1
-        ]
+      "null_analysis": {
+        "null_count": 0,
+        "null_pct": 0.0,
+        "is_nullable": false
       },
-      {
-        "name": "Pclass",
-        "pandas_dtype": "int64",
-        "inferred_semantic_type": "low_cardinality_integer",
-        "sample_values": [
-          3,
-          1,
-          3
-        ]
+      "cardinality": {
+        "unique_count": 891,
+        "uniqueness_ratio": 1.0,
+        "is_high_cardinality": true
       },
-      {
-        "name": "Name",
-        "pandas_dtype": "str",
-        "inferred_semantic_type": "high_cardinality_categorical",
-        "sample_values": [
-          "Braund, Mr. Owen Harris",
-          "Cumings, Mrs. John Bradley (Florence Briggs Thayer)",
-          "Heikkinen, Miss. Laina"
-        ]
-      },
-      {
-        "name": "Sex",
-        "pandas_dtype": "str",
-        "inferred_semantic_type": "low_cardinality_categorical",
-        "sample_values": [
-          "male",
-          "female",
-          "female"
-        ]
-      },
-      {
-        "name": "Age",
-        "pandas_dtype": "float64",
-        "inferred_semantic_type": "continuous_numeric",
-        "sample_values": [
-          22.0,
-          38.0,
-          26.0
-        ]
-      },
-      {
-        "name": "SibSp",
-        "pandas_dtype": "int64",
-        "inferred_semantic_type": "low_cardinality_integer",
-        "sample_values": [
-          1,
-          1,
-          0
-        ]
-      },
-      {
-        "name": "Parch",
-        "pandas_dtype": "int64",
-        "inferred_semantic_type": "low_cardinality_integer",
-        "sample_values": [
-          0,
-          0,
-          0
-        ]
-      },
-      {
-        "name": "Ticket",
-        "pandas_dtype": "str",
-        "inferred_semantic_type": "high_cardinality_categorical",
-        "sample_values": [
-          "A/5 21171",
-          "PC 17599",
-          "STON/O2. 3101282"
-        ]
-      },
-      {
-        "name": "Fare",
-        "pandas_dtype": "float64",
-        "inferred_semantic_type": "continuous_numeric",
-        "sample_values": [
-          7.25,
-          71.2833,
-          7.925
-        ]
-      },
-      {
-        "name": "Cabin",
-        "pandas_dtype": "str",
-        "inferred_semantic_type": "high_cardinality_categorical",
-        "sample_values": [
-          "C85",
-          "C123",
-          "E46"
-        ]
-      },
-      {
-        "name": "Embarked",
-        "pandas_dtype": "str",
-        "inferred_semantic_type": "low_cardinality_categorical",
-        "sample_values": [
-          "S",
-          "C",
-          "S"
-        ]
+      "outliers": {
+        "method": "iqr",
+        "lower_bound": -444.0,
+        "upper_bound": 1336.0,
+        "outlier_count": 0,
+        "outlier_pct": 0.0
       }
-    ]
-  },
-  "basic_stats": {
-    "PassengerId": {
-      "count": 891,
-      "mean": 446.0,
-      "std": 257.3538420152301,
-      "min": 1.0,
-      "p25": 223.5,
-      "p50": 446.0,
-      "p75": 668.5,
-      "max": 891.0
     },
-    "Survived": {
-      "count": 891,
-      "mean": 0.3838383838383838,
-      "std": 0.4865924542648575,
-      "min": 0.0,
-      "p25": 0.0,
-      "p50": 0.0,
-      "p75": 1.0,
-      "max": 1.0
+    {
+      "name": "Survived",
+      "pandas_dtype": "int64",
+      "inferred_semantic_type": "binary_target",
+      "sample_values": [
+        0,
+        1,
+        1
+      ],
+      "basic_stats": {
+        "count": 891,
+        "mean": 0.3838383838383838,
+        "std": 0.4865924542648575,
+        "min": 0.0,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75": 1.0,
+        "max": 1.0
+      },
+      "null_analysis": {
+        "null_count": 0,
+        "null_pct": 0.0,
+        "is_nullable": false
+      },
+      "cardinality": {
+        "unique_count": 2,
+        "uniqueness_ratio": 0.0022,
+        "is_high_cardinality": false
+      },
+      "outliers": {
+        "method": "iqr",
+        "lower_bound": -1.5,
+        "upper_bound": 2.5,
+        "outlier_count": 0,
+        "outlier_pct": 0.0
+      }
     },
-    "Pclass": {
-      "count": 891,
-      "mean": 2.308641975308642,
-      "std": 0.836071240977049,
-      "min": 1.0,
-      "p25": 2.0,
-      "p50": 3.0,
-      "p75": 3.0,
-      "max": 3.0
+    {
+      "name": "Pclass",
+      "pandas_dtype": "int64",
+      "inferred_semantic_type": "low_cardinality_integer",
+      "sample_values": [
+        3,
+        1,
+        3
+      ],
+      "basic_stats": {
+        "count": 891,
+        "mean": 2.308641975308642,
+        "std": 0.836071240977049,
+        "min": 1.0,
+        "p25": 2.0,
+        "p50": 3.0,
+        "p75": 3.0,
+        "max": 3.0
+      },
+      "null_analysis": {
+        "null_count": 0,
+        "null_pct": 0.0,
+        "is_nullable": false
+      },
+      "cardinality": {
+        "unique_count": 3,
+        "uniqueness_ratio": 0.0034,
+        "is_high_cardinality": false
+      },
+      "outliers": {
+        "method": "iqr",
+        "lower_bound": 0.5,
+        "upper_bound": 4.5,
+        "outlier_count": 0,
+        "outlier_pct": 0.0
+      }
     },
-    "Name": {
-      "count": 891,
-      "unique": 891,
-      "top": "Braund, Mr. Owen Harris",
-      "freq": 1
+    {
+      "name": "Name",
+      "pandas_dtype": "str",
+      "inferred_semantic_type": "high_cardinality_categorical",
+      "sample_values": [
+        "Braund, Mr. Owen Harris",
+        "Cumings, Mrs. John Bradley (Florence Briggs Thayer)",
+        "Heikkinen, Miss. Laina"
+      ],
+      "basic_stats": {
+        "count": 891,
+        "unique": 891,
+        "top": "Braund, Mr. Owen Harris",
+        "freq": 1
+      },
+      "null_analysis": {
+        "null_count": 0,
+        "null_pct": 0.0,
+        "is_nullable": false
+      },
+      "cardinality": {
+        "unique_count": 891,
+        "uniqueness_ratio": 1.0,
+        "is_high_cardinality": true
+      }
     },
-    "Sex": {
-      "count": 891,
-      "unique": 2,
-      "top": "male",
-      "freq": 577
+    {
+      "name": "Sex",
+      "pandas_dtype": "str",
+      "inferred_semantic_type": "low_cardinality_categorical",
+      "sample_values": [
+        "male",
+        "female",
+        "female"
+      ],
+      "basic_stats": {
+        "count": 891,
+        "unique": 2,
+        "top": "male",
+        "freq": 577
+      },
+      "null_analysis": {
+        "null_count": 0,
+        "null_pct": 0.0,
+        "is_nullable": false
+      },
+      "cardinality": {
+        "unique_count": 2,
+        "uniqueness_ratio": 0.0022,
+        "is_high_cardinality": false
+      }
     },
-    "Age": {
-      "count": 714,
-      "mean": 29.69911764705882,
-      "std": 14.526497332334042,
-      "min": 0.42,
-      "p25": 20.125,
-      "p50": 28.0,
-      "p75": 38.0,
-      "max": 80.0
+    {
+      "name": "Age",
+      "pandas_dtype": "float64",
+      "inferred_semantic_type": "continuous_numeric",
+      "sample_values": [
+        22.0,
+        38.0,
+        26.0
+      ],
+      "basic_stats": {
+        "count": 714,
+        "mean": 29.69911764705882,
+        "std": 14.526497332334042,
+        "min": 0.42,
+        "p25": 20.125,
+        "p50": 28.0,
+        "p75": 38.0,
+        "max": 80.0
+      },
+      "null_analysis": {
+        "null_count": 177,
+        "null_pct": 19.87,
+        "is_nullable": true
+      },
+      "cardinality": {
+        "unique_count": 88,
+        "uniqueness_ratio": 0.0988,
+        "is_high_cardinality": true
+      },
+      "outliers": {
+        "method": "iqr",
+        "lower_bound": -6.6875,
+        "upper_bound": 64.8125,
+        "outlier_count": 11,
+        "outlier_pct": 1.54
+      }
     },
-    "SibSp": {
-      "count": 891,
-      "mean": 0.5230078563411896,
-      "std": 1.1027434322934317,
-      "min": 0.0,
-      "p25": 0.0,
-      "p50": 0.0,
-      "p75": 1.0,
-      "max": 8.0
+    {
+      "name": "SibSp",
+      "pandas_dtype": "int64",
+      "inferred_semantic_type": "low_cardinality_integer",
+      "sample_values": [
+        1,
+        1,
+        0
+      ],
+      "basic_stats": {
+        "count": 891,
+        "mean": 0.5230078563411896,
+        "std": 1.1027434322934317,
+        "min": 0.0,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75": 1.0,
+        "max": 8.0
+      },
+      "null_analysis": {
+        "null_count": 0,
+        "null_pct": 0.0,
+        "is_nullable": false
+      },
+      "cardinality": {
+        "unique_count": 7,
+        "uniqueness_ratio": 0.0079,
+        "is_high_cardinality": false
+      },
+      "outliers": {
+        "method": "iqr",
+        "lower_bound": -1.5,
+        "upper_bound": 2.5,
+        "outlier_count": 46,
+        "outlier_pct": 5.16
+      }
     },
-    "Parch": {
-      "count": 891,
-      "mean": 0.38159371492704824,
-      "std": 0.8060572211299483,
-      "min": 0.0,
-      "p25": 0.0,
-      "p50": 0.0,
-      "p75": 0.0,
-      "max": 6.0
+    {
+      "name": "Parch",
+      "pandas_dtype": "int64",
+      "inferred_semantic_type": "low_cardinality_integer",
+      "sample_values": [
+        0,
+        0,
+        0
+      ],
+      "basic_stats": {
+        "count": 891,
+        "mean": 0.38159371492704824,
+        "std": 0.8060572211299483,
+        "min": 0.0,
+        "p25": 0.0,
+        "p50": 0.0,
+        "p75": 0.0,
+        "max": 6.0
+      },
+      "null_analysis": {
+        "null_count": 0,
+        "null_pct": 0.0,
+        "is_nullable": false
+      },
+      "cardinality": {
+        "unique_count": 7,
+        "uniqueness_ratio": 0.0079,
+        "is_high_cardinality": false
+      },
+      "outliers": {
+        "method": "iqr",
+        "lower_bound": 0.0,
+        "upper_bound": 0.0,
+        "outlier_count": 213,
+        "outlier_pct": 23.91
+      }
     },
-    "Ticket": {
-      "count": 891,
-      "unique": 681,
-      "top": "347082",
-      "freq": 7
+    {
+      "name": "Ticket",
+      "pandas_dtype": "str",
+      "inferred_semantic_type": "high_cardinality_categorical",
+      "sample_values": [
+        "A/5 21171",
+        "PC 17599",
+        "STON/O2. 3101282"
+      ],
+      "basic_stats": {
+        "count": 891,
+        "unique": 681,
+        "top": "347082",
+        "freq": 7
+      },
+      "null_analysis": {
+        "null_count": 0,
+        "null_pct": 0.0,
+        "is_nullable": false
+      },
+      "cardinality": {
+        "unique_count": 681,
+        "uniqueness_ratio": 0.7643,
+        "is_high_cardinality": true
+      }
     },
-    "Fare": {
-      "count": 891,
-      "mean": 32.204207968574636,
-      "std": 49.6934285971809,
-      "min": 0.0,
-      "p25": 7.9104,
-      "p50": 14.4542,
-      "p75": 31.0,
-      "max": 512.3292
+    {
+      "name": "Fare",
+      "pandas_dtype": "float64",
+      "inferred_semantic_type": "continuous_numeric",
+      "sample_values": [
+        7.25,
+        71.2833,
+        7.925
+      ],
+      "basic_stats": {
+        "count": 891,
+        "mean": 32.204207968574636,
+        "std": 49.6934285971809,
+        "min": 0.0,
+        "p25": 7.9104,
+        "p50": 14.4542,
+        "p75": 31.0,
+        "max": 512.3292
+      },
+      "null_analysis": {
+        "null_count": 0,
+        "null_pct": 0.0,
+        "is_nullable": false
+      },
+      "cardinality": {
+        "unique_count": 248,
+        "uniqueness_ratio": 0.2783,
+        "is_high_cardinality": true
+      },
+      "outliers": {
+        "method": "iqr",
+        "lower_bound": -26.724,
+        "upper_bound": 65.6344,
+        "outlier_count": 116,
+        "outlier_pct": 13.02
+      }
     },
-    "Cabin": {
-      "count": 204,
-      "unique": 147,
-      "top": "G6",
-      "freq": 4
+    {
+      "name": "Cabin",
+      "pandas_dtype": "str",
+      "inferred_semantic_type": "high_cardinality_categorical",
+      "sample_values": [
+        "C85",
+        "C123",
+        "E46"
+      ],
+      "basic_stats": {
+        "count": 204,
+        "unique": 147,
+        "top": "G6",
+        "freq": 4
+      },
+      "null_analysis": {
+        "null_count": 687,
+        "null_pct": 77.1,
+        "is_nullable": true
+      },
+      "cardinality": {
+        "unique_count": 147,
+        "uniqueness_ratio": 0.165,
+        "is_high_cardinality": true
+      }
     },
-    "Embarked": {
-      "count": 889,
-      "unique": 3,
-      "top": "S",
-      "freq": 644
+    {
+      "name": "Embarked",
+      "pandas_dtype": "str",
+      "inferred_semantic_type": "low_cardinality_categorical",
+      "sample_values": [
+        "S",
+        "C",
+        "S"
+      ],
+      "basic_stats": {
+        "count": 889,
+        "unique": 3,
+        "top": "S",
+        "freq": 644
+      },
+      "null_analysis": {
+        "null_count": 2,
+        "null_pct": 0.22,
+        "is_nullable": true
+      },
+      "cardinality": {
+        "unique_count": 3,
+        "uniqueness_ratio": 0.0034,
+        "is_high_cardinality": false
+      }
+    }
+  ],
+  "correlation": {
+    "method": "pearson",
+    "matrix": {
+      "PassengerId": {
+        "PassengerId": 1.0,
+        "Survived": -0.005,
+        "Pclass": -0.0351,
+        "Age": 0.0368,
+        "SibSp": -0.0575,
+        "Parch": -0.0017,
+        "Fare": 0.0127
+      },
+      "Survived": {
+        "PassengerId": -0.005,
+        "Survived": 1.0,
+        "Pclass": -0.3385,
+        "Age": -0.0772,
+        "SibSp": -0.0353,
+        "Parch": 0.0816,
+        "Fare": 0.2573
+      },
+      "Pclass": {
+        "PassengerId": -0.0351,
+        "Survived": -0.3385,
+        "Pclass": 1.0,
+        "Age": -0.3692,
+        "SibSp": 0.0831,
+        "Parch": 0.0184,
+        "Fare": -0.5495
+      },
+      "Age": {
+        "PassengerId": 0.0368,
+        "Survived": -0.0772,
+        "Pclass": -0.3692,
+        "Age": 1.0,
+        "SibSp": -0.3082,
+        "Parch": -0.1891,
+        "Fare": 0.0961
+      },
+      "SibSp": {
+        "PassengerId": -0.0575,
+        "Survived": -0.0353,
+        "Pclass": 0.0831,
+        "Age": -0.3082,
+        "SibSp": 1.0,
+        "Parch": 0.4148,
+        "Fare": 0.1597
+      },
+      "Parch": {
+        "PassengerId": -0.0017,
+        "Survived": 0.0816,
+        "Pclass": 0.0184,
+        "Age": -0.1891,
+        "SibSp": 0.4148,
+        "Parch": 1.0,
+        "Fare": 0.2162
+      },
+      "Fare": {
+        "PassengerId": 0.0127,
+        "Survived": 0.2573,
+        "Pclass": -0.5495,
+        "Age": 0.0961,
+        "SibSp": 0.1597,
+        "Parch": 0.2162,
+        "Fare": 1.0
+      }
     }
   },
+  "target_validation": {
+    "target_column": "Survived",
+    "null_count": 0,
+    "class_counts": {
+      "0": 549,
+      "1": 342
+    },
+    "class_balance_ratio": 0.623,
+    "is_imbalanced": false
+  },
+  "leakage_flags": {
+    "threshold": 0.95,
+    "flagged_columns": []
+  },
   "m2_sections_complete": [
-    "schema",
-    "basic_stats"
-  ],
-  "m2_sections_pending": [
-    "null_analysis",
-    "cardinality",
-    "outliers",
+    "columns",
     "correlation",
     "target_validation",
     "leakage_flags"
-  ]
+  ],
+  "m2_sections_pending": []
 }

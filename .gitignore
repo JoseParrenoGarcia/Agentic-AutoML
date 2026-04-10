@@ -54,3 +54,6 @@ projects/*/data/processed/
 
 # Generated artifacts
 projects/*/artifacts/
+
+# pytest tmp_path directories
+pytest-of-*/
