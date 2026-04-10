@@ -14,6 +14,11 @@ FIXTURES = Path("tests/fixtures")
 NUMERIC_STATS_KEYS = {"count", "mean", "std", "min", "p25", "p50", "p75", "max"}
 CATEGORICAL_STATS_KEYS = {"count", "unique", "top", "freq"}
 
+titanic_available = pytest.mark.skipif(
+    not TITANIC_CSV.exists(),
+    reason="Titanic dataset not available (gitignored)",
+)
+
 
 @pytest.fixture
 def titanic_profile(tmp_path):
@@ -26,8 +31,9 @@ def titanic_schema(titanic_profile):
     return {col["name"]: col for col in titanic_profile["schema"]["columns"]}
 
 
-# --- Schema ---
+# --- Schema (Titanic-specific) ---
 
+@titanic_available
 def test_schema_infers_all_dtypes(titanic_profile):
     columns = titanic_profile["schema"]["columns"]
     assert len(columns) == 12
@@ -35,57 +41,65 @@ def test_schema_infers_all_dtypes(titanic_profile):
     assert all(col["pandas_dtype"] != "" for col in columns)
 
 
+@titanic_available
 def test_semantic_type_identifier(titanic_schema):
     assert titanic_schema["PassengerId"]["inferred_semantic_type"] == "identifier"
 
 
+@titanic_available
 def test_semantic_type_binary_target(titanic_schema):
     assert titanic_schema["Survived"]["inferred_semantic_type"] == "binary_target"
 
 
+@titanic_available
 def test_semantic_type_continuous(titanic_schema):
     assert titanic_schema["Age"]["inferred_semantic_type"] == "continuous_numeric"
 
 
+@titanic_available
 def test_semantic_type_low_cardinality_categorical(titanic_schema):
     assert titanic_schema["Sex"]["inferred_semantic_type"] == "low_cardinality_categorical"
 
 
+@titanic_available
 def test_semantic_type_high_cardinality_categorical(titanic_schema):
     assert titanic_schema["Name"]["inferred_semantic_type"] == "high_cardinality_categorical"
 
 
-# --- Basic stats ---
+# --- Basic stats (Titanic-specific) ---
 
+@titanic_available
 def test_numeric_stats_keys_complete(titanic_profile):
     numeric_cols = ["PassengerId", "Age", "Fare", "SibSp", "Parch", "Pclass"]
     for col in numeric_cols:
         assert NUMERIC_STATS_KEYS == set(titanic_profile["basic_stats"][col].keys()), col
 
 
+@titanic_available
 def test_categorical_stats_keys_complete(titanic_profile):
     categorical_cols = ["Sex", "Embarked", "Name", "Ticket"]
     for col in categorical_cols:
         assert CATEGORICAL_STATS_KEYS == set(titanic_profile["basic_stats"][col].keys()), col
 
 
-# --- Source integrity ---
+# --- Source integrity (uses fixtures, runs in CI) ---
 
 def test_source_hash_stable(tmp_path):
     out1 = tmp_path / "p1.json"
     out2 = tmp_path / "p2.json"
-    p1 = profile_dataset(str(TITANIC_CSV), str(out1))
-    p2 = profile_dataset(str(TITANIC_CSV), str(out2))
+    csv = FIXTURES / "simple_numeric.csv"
+    p1 = profile_dataset(str(csv), str(out1))
+    p2 = profile_dataset(str(csv), str(out2))
     assert p1["source"]["sha256"] == p2["source"]["sha256"]
 
 
 def test_output_written(tmp_path):
     output = tmp_path / "profile.json"
-    profile_dataset(str(TITANIC_CSV), str(output))
+    profile_dataset(str(FIXTURES / "simple_numeric.csv"), str(output))
     assert output.exists()
 
 
-# --- Robustness ---
+# --- Robustness (runs in CI) ---
 
 def test_bad_path_exits_nonzero(tmp_path):
     output = tmp_path / "profile.json"
@@ -104,13 +118,12 @@ def test_bad_path_exits_nonzero(tmp_path):
 
 def test_no_nan_in_json(tmp_path):
     output = tmp_path / "profile.json"
-    profile_dataset(str(TITANIC_CSV), str(output))
-    # json.loads raises ValueError if NaN literals are present
+    profile_dataset(str(FIXTURES / "mixed_types.csv"), str(output))
     data = json.loads(output.read_text())
     assert isinstance(data, dict)
 
 
-# --- Fixtures ---
+# --- Fixtures (runs in CI) ---
 
 def test_fixture_simple_numeric(tmp_path):
     output = tmp_path / "profile.json"
