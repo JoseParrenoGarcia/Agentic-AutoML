@@ -1,7 +1,7 @@
 # Agentic AutoML — Product Requirements Document
 
-**Status:** Draft v0.2
-**Last updated:** 2026-04-08
+**Status:** Draft v0.3
+**Last updated:** 2026-04-10
 
 ---
 
@@ -1177,14 +1177,14 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 |---|---|
 | M0.1 ✅ | PRD and spec-kit documents finalised |
 | M0.2 | Lightweight artifact templates — `project.yaml`, `iteration-<n>.yaml` plan, and `run-history.jsonl` entry. Keep minimal; flesh out as M2 reveals actual field requirements. |
-| M0.3 | Minimal top-level folder scaffold: `agents/`, `references/`, `knowledge-base/`, `templates/`, `src/`, `projects/` — each with a single-line README stub. No subdirectories; those are created by the milestone that needs them. |
-| M0.4 | Lightweight `rules/coding-rules.md` and `rules/artifact-contracts.md` stubs — establish structure and key constraints now, expand with concrete detail as M2 and M3 reveal actual needs. |
+| M0.3 ✅ | Top-level folder scaffold created: `references/`, `knowledge-base/`, `templates/`, `src/`, `projects/` — each with a README stub. Agent instruction files live at `.claude/agents/` (Claude Code convention) rather than repo root. |
+| M0.4 | Lightweight `rules/coding-rules.md` and `rules/artifact-contracts.md` stubs — establish structure and key constraints now, expand with concrete detail as M2 and M3 reveal actual needs. `rules/authoring.md` ✅ already exists. |
 | M0.5 ✅ | Claude Code authoring skills: four skills in `.claude/skills/` (`create-agent`, `create-hook`, `create-rule`, `create-skill`) each containing DOs, DON'Ts, anti-patterns, and official reference links for building Claude Code primitives. Enforced at authoring time via `authoring.md` rule. These skills serve as the living best-practices reference consumed whenever a primitive is created or significantly restructured. |
 
 ### M1 — Single-Project Runtime Skeleton
 **Type:** Major | **Outcome:** A project can be initialised and run through an empty but structured loop.
 
-> **Status: Deferred.** M1 will be built incrementally inside M2 rather than as a standalone milestone. M2.1 will introduce a minimal `projects/<sample>/experiment.yaml` bootstrap. Full runtime skeleton (state loader/saver, iteration controller, smoke tests) will be designed once M2 teaches what the loop actually needs. M1 milestones below remain as a reference for what must eventually exist.
+> **Status: Deferred.** M1 was built incrementally inside M2. The Titanic project (`projects/titanic/`) acts as the runtime skeleton — `project.yaml`, raw data, processed data, artifacts, and iteration directories are all in place. M2 is now complete. Full orchestration (state loader/saver, iteration controller) remains for a future milestone. M1 milestones below remain as reference for what must eventually exist.
 
 | Minor Milestone | Deliverable |
 |---|---|
@@ -1193,16 +1193,16 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 | M1.3 | Base config files and environment conventions |
 | M1.4 | Smoke tests for project creation and iteration folder creation |
 
-### M2 — Deterministic Dataset Understanding
+### M2 — Deterministic Dataset Understanding ✅
 **Type:** Major | **Outcome:** Credible dataset profile and EDA summary for any supplied tabular dataset.
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M2.1 | Schema and basic stats profiler |
-| M2.2 | Null, cardinality, outlier, and correlation analysis |
-| M2.3 | Generate `profile.json` and `profile.md` |
-| M2.4 | Plot generation as optional human-facing output |
-| M2.5 | Test fixtures for common data-quality edge cases |
+| M2.1 ✅ | Schema and basic stats profiler (`src/analysis/profiler.py`) |
+| M2.2 ✅ | Null, cardinality, outlier, and correlation analysis (Pearson + Cramér's V) |
+| M2.3 ✅ | Generate `profile.json` and `profile.md` (validated against Titanic dataset) |
+| M2.4 ✅ | Plot generation (`src/analysis/plots.py`): distribution and target-vs-feature plots |
+| M2.5 ✅ | Test suite (`tests/analysis/test_profiler.py`) covering schema, stats, nulls, cardinality, outliers, and correlation |
 
 ### M3 — Planning Layer
 **Type:** Major | **Outcome:** System turns project context into a structured first experiment plan.
