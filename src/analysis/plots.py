@@ -82,7 +82,7 @@ def plot_distributions(df: pd.DataFrame, profile: dict, out_dir: Path) -> list[P
 # ---------------------------------------------------------------------------
 
 def plot_correlation_heatmap(profile: dict, out_dir: Path) -> Path | None:
-    matrix = profile["correlation"]["matrix"]
+    matrix = profile["correlation"]["pearson"]["matrix"]
     if not matrix:
         return None
     cols = list(matrix.keys())

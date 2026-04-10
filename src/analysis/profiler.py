@@ -7,8 +7,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy import stats
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 
 class _SafeEncoder(json.JSONEncoder):
@@ -84,6 +85,15 @@ def _sample_values(col: pd.Series, n: int = 3) -> list:
     return [v.item() if hasattr(v, "item") else v for v in vals]
 
 
+def _describe_column(col_name: str, inferred_type: str, col: pd.Series) -> str:
+    unique = col.nunique(dropna=True)
+    sample = col.dropna().head(3).tolist()
+    sample_str = ", ".join(str(v) for v in sample)
+    nullable = ", nullable" if col.isna().any() else ""
+    label = inferred_type.replace("_", " ")
+    return f"{col_name}: {label}{nullable}, {unique} unique values. Sample: [{sample_str}]."
+
+
 def _basic_stats_numeric(col: pd.Series) -> dict:
     desc = col.describe(percentiles=[0.25, 0.5, 0.75])
     return {
@@ -95,6 +105,7 @@ def _basic_stats_numeric(col: pd.Series) -> dict:
         "p50": float(desc["50%"]),
         "p75": float(desc["75%"]),
         "max": float(desc["max"]),
+        "skewness": round(float(col.skew()), 4) if col.count() > 0 else None,
     }
 
 
@@ -108,16 +119,66 @@ def _basic_stats_categorical(col: pd.Series) -> dict:
     }
 
 
-def _correlation(df: pd.DataFrame) -> dict:
+def _top_pairs(matrix: dict, n: int = 10) -> list[dict]:
+    cols = list(matrix.keys())
+    pairs = []
+    for i, a in enumerate(cols):
+        for b in cols[i + 1:]:
+            pairs.append({"col_a": a, "col_b": b, "value": round(matrix[a][b], 4)})
+    pairs.sort(key=lambda x: abs(x["value"]), reverse=True)
+    return pairs[:n]
+
+
+def _pearson_correlation(df: pd.DataFrame) -> dict:
     numeric_df = df.select_dtypes(include="number")
     if numeric_df.shape[1] < 2:
-        return {"method": "pearson", "matrix": {}, "note": "fewer than 2 numeric columns"}
+        return {"matrix": {}, "top_pairs": [], "note": "fewer than 2 numeric columns"}
     corr_matrix = numeric_df.corr(method="pearson")
     matrix = {
         col: {other: round(float(corr_matrix.loc[col, other]), 4) for other in corr_matrix.columns}
         for col in corr_matrix.columns
     }
-    return {"method": "pearson", "matrix": matrix}
+    return {"matrix": matrix, "top_pairs": _top_pairs(matrix)}
+
+
+def _cramers_v_single(x: pd.Series, y: pd.Series) -> float:
+    ct = pd.crosstab(x, y)
+    chi2 = stats.chi2_contingency(ct, correction=False)[0]
+    n = int(ct.values.sum())
+    r, k = ct.shape
+    denom = min(r - 1, k - 1)
+    return float(np.sqrt(chi2 / n / denom)) if denom > 0 and n > 0 else 0.0
+
+
+def _cramers_v_correlation(df: pd.DataFrame) -> dict:
+    cat_df = df.select_dtypes(include=["object", "category", "string"])
+    # skip very high-cardinality columns to avoid massive crosstabs
+    cat_df = cat_df[[c for c in cat_df.columns if cat_df[c].nunique() <= 50]]
+    cols = list(cat_df.columns)
+    if len(cols) < 2:
+        return {"matrix": {}, "top_pairs": [], "note": "fewer than 2 categorical columns"}
+
+    # compute upper triangle, fill matrix symmetrically
+    computed: dict[tuple[str, str], float] = {}
+    for i, a in enumerate(cols):
+        for j in range(i + 1, len(cols)):
+            b = cols[j]
+            v = round(_cramers_v_single(cat_df[a], cat_df[b]), 4)
+            computed[(a, b)] = v
+            computed[(b, a)] = v
+
+    matrix = {
+        a: {b: (1.0 if a == b else computed.get((a, b), 0.0)) for b in cols}
+        for a in cols
+    }
+    return {"matrix": matrix, "top_pairs": _top_pairs(matrix)}
+
+
+def _correlation(df: pd.DataFrame) -> dict:
+    return {
+        "pearson": _pearson_correlation(df),
+        "cramers_v": _cramers_v_correlation(df),
+    }
 
 
 def _target_validation(
@@ -170,6 +231,96 @@ def _leakage_flags(df: pd.DataFrame, target_column: str | None) -> dict:
     return {"threshold": 0.95, "flagged_columns": flagged}
 
 
+def _near_duplicate_pairs(df: pd.DataFrame, threshold: float = 0.98) -> list[dict]:
+    numeric = df.select_dtypes(include="number")
+    if numeric.shape[1] < 2:
+        return []
+    corr = numeric.corr(method="pearson")
+    cols = corr.columns.tolist()
+    pairs = []
+    for i, a in enumerate(cols):
+        for b in cols[i + 1:]:
+            v = corr.loc[a, b]
+            if pd.notna(v) and abs(v) >= threshold:
+                pairs.append({"col_a": a, "col_b": b, "pearson_r": round(float(v), 4)})
+    return pairs
+
+
+def _dataset_description(input_path: str, df: pd.DataFrame, project: dict | None) -> str:
+    """Heuristic one-line description for the dataset. Uses project.yaml if available."""
+    if project and project.get("description"):
+        return str(project["description"])
+    filename = Path(input_path).stem.replace("_", " ").replace("-", " ")
+    rows, cols = df.shape
+    parts = [f"{filename}: {rows} rows, {cols} columns."]
+    target = project.get("target_column") if project else None
+    task = project.get("task_type") if project else None
+    if target and task:
+        parts.append(f"{task.replace('_', ' ')} on '{target}'.")
+    elif target:
+        parts.append(f"Target: '{target}'.")
+    return " ".join(parts)
+
+
+def _feature_risk_flags(columns: list[dict], df: pd.DataFrame) -> dict:
+    flagged = [
+        {"column": col["name"], "flags": col["risk_flags"]}
+        for col in columns if col.get("risk_flags")
+    ]
+    near_dups = _near_duplicate_pairs(df)
+    return {"flagged_columns": flagged, "near_duplicate_pairs": near_dups}
+
+
+def _mutual_information(
+    df: pd.DataFrame,
+    target_column: str | None,
+    task_type: str | None,
+) -> dict:
+    if not target_column or target_column not in df.columns:
+        return {"skipped": True, "reason": "no target_column configured"}
+
+    from sklearn.feature_selection import mutual_info_classif, mutual_info_regression  # noqa: PLC0415
+    from sklearn.preprocessing import OrdinalEncoder  # noqa: PLC0415
+
+    X_frames: list[pd.Series] = []
+    discrete_mask: list[bool] = []
+    included_cols: list[str] = []
+
+    for col_name in df.columns:
+        if col_name == target_column:
+            continue
+        col = df[col_name]
+        if pd.api.types.is_numeric_dtype(col):
+            X_frames.append(col.fillna(col.median()).rename(col_name))
+            discrete_mask.append(False)
+            included_cols.append(col_name)
+        elif col.nunique() <= 50:
+            # ordinal-encode low-cardinality categoricals; treat NaN as its own category
+            enc = OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=-1)
+            encoded = enc.fit_transform(col.fillna("__missing__").values.reshape(-1, 1)).flatten()
+            X_frames.append(pd.Series(encoded, name=col_name))
+            discrete_mask.append(True)
+            included_cols.append(col_name)
+        # skip high-cardinality text columns (Name, Ticket etc.)
+
+    if not X_frames:
+        return {"skipped": True, "reason": "no encodable feature columns"}
+
+    X = pd.concat(X_frames, axis=1)
+    y = df[target_column]
+
+    if task_type in ("binary_classification", "classification"):
+        mi = mutual_info_classif(X, y, discrete_features=discrete_mask, random_state=42)
+    else:
+        mi = mutual_info_regression(X, y, discrete_features=discrete_mask, random_state=42)
+
+    scores = sorted(
+        [{"column": c, "mi_score": round(float(v), 4)} for c, v in zip(included_cols, mi)],
+        key=lambda x: -x["mi_score"],
+    )
+    return {"scores": scores}
+
+
 def _build_column(
     col: pd.Series,
     col_name: str,
@@ -177,10 +328,12 @@ def _build_column(
     target_column: str | None,
     task_type: str | None,
 ) -> dict:
+    inferred_type = _infer_semantic_type(col, col_name, target_column, task_type)
     entry: dict = {
         "name": col_name,
         "pandas_dtype": str(col.dtype),
-        "inferred_semantic_type": _infer_semantic_type(col, col_name, target_column, task_type),
+        "inferred_semantic_type": inferred_type,
+        "description": _describe_column(col_name, inferred_type, col),
         "sample_values": _sample_values(col),
     }
 
@@ -226,6 +379,16 @@ def _build_column(
             "outlier_pct": round(outlier_count / len(non_null) * 100, 2) if len(non_null) > 0 else 0.0,
         }
 
+    # risk_flags
+    risk_flags: list[str] = []
+    if pd.api.types.is_numeric_dtype(col):
+        non_null = col.dropna()
+        if col.nunique(dropna=True) <= 1:
+            risk_flags.append("zero_variance")
+        elif non_null.count() > 0 and abs(float(non_null.skew())) > 1.0:
+            risk_flags.append("high_skew")
+    entry["risk_flags"] = risk_flags
+
     return entry
 
 
@@ -240,10 +403,11 @@ def profile_dataset(
 
     target_column = None
     task_type = None
+    project: dict | None = None
     if project_yaml_path and Path(project_yaml_path).exists():
         import yaml
         with open(project_yaml_path) as f:
-            project = yaml.safe_load(f)
+            project = yaml.safe_load(f) or {}
         target_column = project.get("target_column")
         task_type = project.get("task_type")
 
@@ -260,6 +424,7 @@ def profile_dataset(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "source": {
             "path": input_path,
+            "description": _dataset_description(input_path, df, project),
             "sha256": _sha256(input_path),
             "row_count": n_rows,
             "column_count": len(df.columns),
@@ -269,8 +434,11 @@ def profile_dataset(
         "correlation": _correlation(df),
         "target_validation": _target_validation(df, target_column, task_type),
         "leakage_flags": _leakage_flags(df, target_column),
+        "feature_risk_flags": _feature_risk_flags(columns, df),
+        "mutual_information": _mutual_information(df, target_column, task_type),
         "m2_sections_complete": [
             "columns", "correlation", "target_validation", "leakage_flags",
+            "feature_risk_flags", "mutual_information",
         ],
         "m2_sections_pending": [],
     }

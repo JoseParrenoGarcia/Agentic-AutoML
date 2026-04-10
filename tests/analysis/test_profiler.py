@@ -11,7 +11,7 @@ TITANIC_CSV = Path("projects/titanic/data/raw/train.csv")
 TITANIC_YAML = Path("projects/titanic/project.yaml")
 FIXTURES = Path("tests/fixtures")
 
-NUMERIC_STATS_KEYS = {"count", "mean", "std", "min", "p25", "p50", "p75", "max"}
+NUMERIC_STATS_KEYS = {"count", "mean", "std", "min", "p25", "p50", "p75", "max", "skewness"}
 CATEGORICAL_STATS_KEYS = {"count", "unique", "top", "freq"}
 
 titanic_available = pytest.mark.skipif(
@@ -150,13 +150,24 @@ def test_outliers_fare_has_outliers(titanic_schema):
 # --- Correlation (Titanic-specific) ---
 
 @titanic_available
-def test_correlation_method(titanic_profile):
-    assert titanic_profile["correlation"]["method"] == "pearson"
+def test_correlation_has_pearson_section(titanic_profile):
+    assert "pearson" in titanic_profile["correlation"]
+    assert "matrix" in titanic_profile["correlation"]["pearson"]
+    assert "top_pairs" in titanic_profile["correlation"]["pearson"]
+
+
+@titanic_available
+def test_correlation_has_cramers_v_section(titanic_profile):
+    assert "cramers_v" in titanic_profile["correlation"]
+    matrix = titanic_profile["correlation"]["cramers_v"]["matrix"]
+    # Sex and Embarked are both low-cardinality categoricals on Titanic
+    assert "Sex" in matrix
+    assert "Embarked" in matrix
 
 
 @titanic_available
 def test_correlation_matrix_is_square(titanic_profile):
-    matrix = titanic_profile["correlation"]["matrix"]
+    matrix = titanic_profile["correlation"]["pearson"]["matrix"]
     cols = list(matrix.keys())
     for col in cols:
         assert set(matrix[col].keys()) == set(cols)
@@ -164,17 +175,25 @@ def test_correlation_matrix_is_square(titanic_profile):
 
 @titanic_available
 def test_correlation_diagonal_is_one(titanic_profile):
-    matrix = titanic_profile["correlation"]["matrix"]
+    matrix = titanic_profile["correlation"]["pearson"]["matrix"]
     for col in matrix:
         assert matrix[col][col] == 1.0
 
 
 @titanic_available
 def test_correlation_only_numeric_columns(titanic_profile):
-    matrix = titanic_profile["correlation"]["matrix"]
+    matrix = titanic_profile["correlation"]["pearson"]["matrix"]
     assert "Sex" not in matrix
     assert "Name" not in matrix
     assert "Fare" in matrix
+
+
+@titanic_available
+def test_correlation_top_pairs_sorted(titanic_profile):
+    top = titanic_profile["correlation"]["pearson"]["top_pairs"]
+    assert len(top) > 1
+    for i in range(len(top) - 1):
+        assert abs(top[i]["value"]) >= abs(top[i + 1]["value"])
 
 
 # --- Target validation (Titanic-specific) ---
@@ -314,7 +333,7 @@ def test_outliers_per_column(tmp_path):
 def test_correlation_fixture(tmp_path):
     output = tmp_path / "profile.json"
     profile = profile_dataset(str(FIXTURES / "simple_numeric.csv"), str(output))
-    matrix = profile["correlation"]["matrix"]
+    matrix = profile["correlation"]["pearson"]["matrix"]
     for col in matrix:
         assert matrix[col][col] == 1.0
 
@@ -335,4 +354,58 @@ def test_m2_sections_all_complete(tmp_path):
     output = tmp_path / "profile.json"
     profile = profile_dataset(str(FIXTURES / "simple_numeric.csv"), str(output))
     assert profile["m2_sections_pending"] == []
-    assert set(profile["m2_sections_complete"]) == {"columns", "correlation", "target_validation", "leakage_flags"}
+    assert set(profile["m2_sections_complete"]) == {
+        "columns", "correlation", "target_validation", "leakage_flags",
+        "feature_risk_flags", "mutual_information",
+    }
+
+
+# --- New M2 gap-closure tests (fixture-based, runs in CI) ---
+
+def test_column_has_description(tmp_path):
+    output = tmp_path / "profile.json"
+    profile = profile_dataset(str(FIXTURES / "simple_numeric.csv"), str(output))
+    for col in profile["columns"]:
+        assert "description" in col
+        assert isinstance(col["description"], str)
+        assert len(col["description"]) > 0
+
+
+def test_numeric_column_has_skewness(tmp_path):
+    output = tmp_path / "profile.json"
+    profile = profile_dataset(str(FIXTURES / "simple_numeric.csv"), str(output))
+    for col in profile["columns"]:
+        if "outliers" in col:  # numeric indicator
+            assert "skewness" in col["basic_stats"]
+            assert isinstance(col["basic_stats"]["skewness"], float)
+
+
+def test_column_has_risk_flags(tmp_path):
+    output = tmp_path / "profile.json"
+    profile = profile_dataset(str(FIXTURES / "simple_numeric.csv"), str(output))
+    for col in profile["columns"]:
+        assert "risk_flags" in col
+        assert isinstance(col["risk_flags"], list)
+
+
+def test_feature_risk_flags_section_exists(tmp_path):
+    output = tmp_path / "profile.json"
+    profile = profile_dataset(str(FIXTURES / "simple_numeric.csv"), str(output))
+    frf = profile["feature_risk_flags"]
+    assert "flagged_columns" in frf
+    assert "near_duplicate_pairs" in frf
+    assert isinstance(frf["flagged_columns"], list)
+    assert isinstance(frf["near_duplicate_pairs"], list)
+
+
+def test_mutual_information_skipped_without_yaml(tmp_path):
+    output = tmp_path / "profile.json"
+    profile = profile_dataset(str(FIXTURES / "simple_numeric.csv"), str(output))
+    assert profile["mutual_information"]["skipped"] is True
+
+
+def test_cramers_v_empty_for_no_categoricals(tmp_path):
+    output = tmp_path / "profile.json"
+    profile = profile_dataset(str(FIXTURES / "simple_numeric.csv"), str(output))
+    # simple_numeric.csv has no categorical columns
+    assert profile["correlation"]["cramers_v"]["matrix"] == {}

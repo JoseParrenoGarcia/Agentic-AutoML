@@ -68,11 +68,21 @@ def test_binary_int_infers_binary_flag(edge_schema):
     assert edge_schema["binary_int"]["inferred_semantic_type"] == "binary_flag"
 
 
+# --- Risk flags ---
+
+def test_constant_has_zero_variance_flag(edge_schema):
+    assert "zero_variance" in edge_schema["constant"]["risk_flags"]
+
+
+def test_non_constant_numeric_no_zero_variance(edge_schema):
+    assert "zero_variance" not in edge_schema["binary_int"]["risk_flags"]
+
+
 # --- No numeric columns ---
 
 def test_no_numeric_correlation_matrix_empty(no_numeric_profile):
-    matrix = no_numeric_profile["correlation"]["matrix"]
-    assert matrix == {}
+    # no numeric columns → pearson matrix is empty
+    assert no_numeric_profile["correlation"]["pearson"]["matrix"] == {}
 
 
 def test_no_numeric_no_outliers_key(no_numeric_profile):

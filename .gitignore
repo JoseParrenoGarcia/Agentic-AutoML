@@ -57,3 +57,7 @@ projects/*/artifacts/
 
 # pytest tmp_path directories
 pytest-of-*/
+
+# Claude Code / MCP plugin artifacts (leaked into project root)
+context-mode-guidance-*/
+node-compile-cache/
