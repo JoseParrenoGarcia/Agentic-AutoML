@@ -41,8 +41,8 @@ A Claude Code–orchestrated system for iterative ML experimentation on tabular 
 Behavioural and maintenance rules live in `.claude/rules/` (auto-loaded each session):
 
 - `authoring.md` — guardrail: load the correct authoring skill before creating/restructuring any agent, skill, hook, rule, or memory file
-- `coding-rules.md` — Python style, error handling, audit trail guardrails (pending)
-- `artifact-contracts.md` — JSON schema and structure guarantees for all outputs (pending)
+- `coding-rules.md` — path-scoped to `runs/`; 10 coding rules for Coder-generated scripts ✅ (M0.4)
+- `artifact-contracts.md` — unconditional; 4 artifact schema contracts (profile.json, iteration YAML, run-history, model-report) ✅ (M0.4)
 - `ml-experiment-constraints.md` — data validation, reproducibility, benchmark tracking (pending)
 - `maintenance.md` — what to update when significant changes happen (pending)
 
