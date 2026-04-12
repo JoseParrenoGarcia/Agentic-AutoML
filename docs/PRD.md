@@ -1,7 +1,7 @@
 # Agentic AutoML — Product Requirements Document
 
-**Status:** Draft v0.3
-**Last updated:** 2026-04-10
+**Status:** Draft v0.4
+**Last updated:** 2026-04-12
 
 ---
 
@@ -284,8 +284,8 @@ Each agent owns one decision class, receives structured file inputs, and emits m
 - Project memory summary
 
 **Outputs:**
-- `artifacts/plans/iteration-<n>.yaml` — structured plan
-- `artifacts/plans/iteration-<n>.md` — optional human-readable rationale
+- `artifacts/plans/iteration-<n>.yaml` — structured plan (machine-readable, validated by `src/planning/validator.py`)
+- `artifacts/plans/iteration-<n>.md` — human-readable rationale narrative (required; must cite specific profile findings for each decision)
 
 **Plan Schema (minimum fields):**
 ```yaml
@@ -1176,9 +1176,9 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 | Minor Milestone | Deliverable |
 |---|---|
 | M0.1 ✅ | PRD and spec-kit documents finalised |
-| M0.2 | Lightweight artifact templates — `project.yaml`, `iteration-<n>.yaml` plan, and `run-history.jsonl` entry. Keep minimal; flesh out as M2 reveals actual field requirements. |
+| M0.2 | Lightweight artifact templates — `project.yaml`, `iteration-<n>.yaml` plan, and `run-history.jsonl` entry. `templates/plans/iteration.yaml` ✅ created at M3. `project.yaml` template and run-history entry format pending. |
 | M0.3 ✅ | Top-level folder scaffold created: `references/`, `knowledge-base/`, `templates/`, `src/`, `projects/` — each with a README stub. Agent instruction files live at `.claude/agents/` (Claude Code convention) rather than repo root. |
-| M0.4 | Lightweight `rules/coding-rules.md` and `rules/artifact-contracts.md` stubs — establish structure and key constraints now, expand with concrete detail as M2 and M3 reveal actual needs. `rules/authoring.md` ✅ already exists. |
+| M0.4 ✅ | `rules/coding-rules.md` (path-scoped to `runs/`, 10 coding rules) and `rules/artifact-contracts.md` (unconditional, 4 artifact schema contracts) created. `rules/authoring.md` already existed. |
 | M0.5 ✅ | Claude Code authoring skills: four skills in `.claude/skills/` (`create-agent`, `create-hook`, `create-rule`, `create-skill`) each containing DOs, DON'Ts, anti-patterns, and official reference links for building Claude Code primitives. Enforced at authoring time via `authoring.md` rule. These skills serve as the living best-practices reference consumed whenever a primitive is created or significantly restructured. |
 
 ### M1 — Single-Project Runtime Skeleton
@@ -1204,15 +1204,15 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 | M2.4 ✅ | Plot generation (`src/analysis/plots.py`): distribution and target-vs-feature plots |
 | M2.5 ✅ | Test suite (`tests/analysis/test_profiler.py`) covering schema, stats, nulls, cardinality, outliers, and correlation |
 
-### M3 — Planning Layer
+### M3 — Planning Layer ✅
 **Type:** Major | **Outcome:** System turns project context into a structured first experiment plan.
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M3.1 | Plan schema definition and validation |
-| M3.2 | Initial planner prompt and templates |
-| M3.3 | Project-memory summary input integration |
-| M3.4 | Fixture-based planner tests using stable dataset profiles |
+| M3.1 ✅ | Plan schema template (`templates/plans/iteration.yaml`) and validator (`src/planning/validator.py` + `PlanValidationError`). Enforces all required fields including exactly one model step per iteration. |
+| M3.2 ✅ | Planner agent (`.claude/agents/planner.md`): 8-step workflow, scope guardrails (CAN/CANNOT), init and continuation paths, one-model-per-iteration constraint. Rewritten post-smoke-test to remove prescriptive decision tables — agent reasons from profile data directly. |
+| M3.3 ✅ | Memory scaffold (`projects/titanic/memory/run-history.jsonl`, `projects/titanic/memory/decision-log.md`). Planner reads both on iteration > 1. |
+| M3.4 ✅ | 14 tests in `tests/planning/test_plan_schema.py` (validator schema, edge cases, exactly-one-model-step enforcement). Smoke test on Titanic produced a valid, profile-grounded `artifacts/plans/iteration-1.yaml` and `iteration-1.md`. |
 
 ### M4 — Plan-to-Code Layer
 **Type:** Major | **Outcome:** System translates a plan into executable Python code using templates.

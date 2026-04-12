@@ -3,7 +3,7 @@
 A Claude Code–orchestrated system for iterative ML experimentation on tabular data. The core loop: dataset analysis → structured planning → code generation → execution → model evaluation → review → memory → repeat. Produces fully auditable artifacts and experiment history.
 
 **Primary user:** Jose
-**Active milestone:** M3 — Planning Layer (next)
+**Active milestone:** M4 — Plan-to-Code Layer (next)
 
 ---
 
@@ -22,10 +22,10 @@ A Claude Code–orchestrated system for iterative ML experimentation on tabular 
 | `knowledge-base/` | Per-project memory, benchmarks, artifacts | README stub ✅ (M0.3) |
 | `.claude/agents/` | Agent instruction files | Created, no agents yet |
 | `.claude/skills/` | Authoring skill files (create-agent, create-hook, create-rule, create-skill) | 4 skills ✅ (M0.5) |
-| `.claude/rules/` | Behavioural guardrails, artifact contracts, ML constraints | `authoring.md` ✅; others pending (M0.4) |
+| `.claude/rules/` | Behavioural guardrails, artifact contracts, ML constraints | `authoring.md` ✅, `coding-rules.md` ✅, `artifact-contracts.md` ✅ (M0.4) |
 | `.claude/hooks/` | Automation hooks | Pending (M0.3) |
-| `templates/` | Artifact templates: model-report, experiment YAML, etc. | README stub only; templates pending (M0.2) |
-| `src/` | Shared Python utilities | `analysis/` module ✅ (M2) |
+| `templates/` | Artifact templates: model-report, experiment YAML, etc. | `plans/iteration.yaml` ✅ (M3); others pending (M0.2) |
+| `src/` | Shared Python utilities | `analysis/` module ✅ (M2), `planning/` module ✅ (M3) |
 | `projects/` | Per-project experiment folders and results | Titanic project ✅ (M2) |
 
 ---
