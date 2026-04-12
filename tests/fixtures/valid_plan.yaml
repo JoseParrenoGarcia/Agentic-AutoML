@@ -1,0 +1,47 @@
+# Titanic — Iteration 1 (baseline)
+iteration: 1
+objective: "Establish a binary classification baseline for Titanic survival prediction using standard imputation and two interpretable model families."
+
+hypotheses:
+  - id: H1
+    description: "Sex is the strongest predictor of survival (MI score 0.1509). A logistic regression baseline with simple imputation should achieve AUC-ROC > 0.78 without any complex feature engineering."
+    expected_impact: "Moderate improvement over random; establishes interpretable baseline. Complexity: low."
+  - id: H2
+    description: "Age has 19.87% nulls with skewness 0.39 — median imputation is appropriate. Cabin has 77.10% nulls — exclusion avoids high-noise sparse features on iteration 1."
+    expected_impact: "Prevents null leakage into model; median impute preserves distribution better than mean for slightly skewed data. Complexity: low."
+
+feature_steps:
+  - name: "exclude_identifiers"
+    action: "Drop PassengerId, Name, Ticket — inferred_semantic_type is identifier or high cardinality with no direct predictive value."
+    rationale: "PassengerId: 891 unique values, identifier type. Name: 891 unique values, identifier. Ticket: 681 unique values, high cardinality. Exclusion simplifies the baseline."
+  - name: "exclude_cabin"
+    action: "Drop Cabin — 77.10% missing exceeds the 0.5 null_pct threshold. Cost: lose potential deck-level signal. Benefit: avoid sparse high-cardinality noise on iteration 1."
+    rationale: "null_pct = 0.771 > threshold 0.5. High cardinality (147 unique values). Cost-benefit: deck signal is speculative; exclusion preferred on baseline iteration."
+  - name: "impute_age"
+    action: "Median impute Age — 19.87% nulls, skewness 0.39 (below 1.0 threshold but close to boundary; median is robust)."
+    rationale: "null_analysis.null_pct = 0.199. basic_stats.skewness = 0.39. Median imputation is simpler than KNN and sufficient for a baseline."
+  - name: "impute_embarked"
+    action: "Mode impute Embarked — 0.22% missing (2 rows), categorical."
+    rationale: "null_analysis.null_pct = 0.002. Categorical column. Mode imputation is trivially correct for 2 missing rows."
+  - name: "encode_sex"
+    action: "Binary encode Sex (male=0, female=1) — low cardinality categorical, 2 unique values."
+    rationale: "inferred_semantic_type = low_cardinality_categorical. 2 unique values — binary encoding is the simplest valid approach."
+  - name: "encode_embarked"
+    action: "One-hot encode Embarked — low cardinality categorical, 3 unique values (S, C, Q)."
+    rationale: "inferred_semantic_type = low_cardinality_categorical. 3 unique values — one-hot is appropriate; no ordinal relationship implied."
+  - name: "log_transform_fare"
+    action: "Log1p transform Fare — skewness 4.79 (> 1.0 threshold), outlier_pct 13.02%. Apply log1p to compress the long tail."
+    rationale: "feature_risk_flags.flagged_columns includes Fare with high_skew. basic_stats.skewness = 4.79. log1p handles zero values and reduces skew."
+
+model_steps:
+  - algorithm: "LogisticRegression"
+    hyperparameters:
+      max_iter: 1000
+      C: 1.0
+      solver: "lbfgs"
+      random_state: 42
+    rationale: "Interpretable linear baseline for iteration 1. Small dataset (891 rows), fully numeric feature matrix after encoding. Coefficients directly attribute contribution per feature for hypothesis validation."
+
+evaluation_focus: "Feature coefficients to confirm Sex and Fare dominate (MI scores: Sex=0.1509, Fare=0.139). Inspect val AUC-ROC and per-class recall for Survived=1."
+expected_win_condition: "Validation AUC-ROC > 0.80."
+rollback_or_stop_condition: "Validation AUC-ROC < 0.75 or val accuracy < 0.75 for both models."

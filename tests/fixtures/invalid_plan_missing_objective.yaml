@@ -1,0 +1,22 @@
+# Invalid plan — missing 'objective' field
+iteration: 1
+
+hypotheses:
+  - id: H1
+    description: "Sex is the strongest predictor of survival."
+    expected_impact: "Moderate improvement over random. Complexity: low."
+
+feature_steps:
+  - name: "exclude_identifiers"
+    action: "Drop PassengerId, Name, Ticket."
+    rationale: "Identifier columns with no predictive value."
+
+model_steps:
+  - algorithm: "LogisticRegression"
+    hyperparameters:
+      max_iter: 1000
+    rationale: "Interpretable linear baseline."
+
+evaluation_focus: "Feature importance and AUC-ROC comparison."
+expected_win_condition: "Validation AUC-ROC > 0.80."
+rollback_or_stop_condition: "Validation AUC-ROC < 0.70."
