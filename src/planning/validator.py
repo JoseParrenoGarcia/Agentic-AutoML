@@ -86,8 +86,8 @@ def validate_plan(plan: Union[str, Path, dict]) -> dict:
                 )
 
     model_steps = data["model_steps"]
-    if not isinstance(model_steps, list) or len(model_steps) == 0:
-        raise PlanValidationError("'model_steps' must be a non-empty list")
+    if not isinstance(model_steps, list) or len(model_steps) != 1:
+        raise PlanValidationError("'model_steps' must be a list with exactly one entry")
     for i, step in enumerate(model_steps):
         if "algorithm" not in step or not isinstance(step["algorithm"], str) or not step["algorithm"].strip():
             raise PlanValidationError(

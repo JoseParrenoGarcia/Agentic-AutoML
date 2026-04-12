@@ -39,14 +39,9 @@ model_steps:
       max_iter: 1000
       C: 1.0
       solver: "lbfgs"
-    rationale: "Interpretable linear baseline. Mixed numeric/categorical features after encoding are well-suited to logistic regression. C=1.0 is standard regularization for a first run."
-  - algorithm: "RandomForestClassifier"
-    hyperparameters:
-      n_estimators: 100
-      max_depth: 6
       random_state: 42
-    rationale: "Non-linear tree-based baseline to complement logistic regression. max_depth=6 limits overfitting on 891 training samples. 100 trees is sufficient for baseline variance estimation."
+    rationale: "Interpretable linear baseline for iteration 1. Small dataset (891 rows), fully numeric feature matrix after encoding. Coefficients directly attribute contribution per feature for hypothesis validation."
 
-evaluation_focus: "Feature importance distribution from RandomForestClassifier to validate that Sex and Fare dominate (MI scores: Sex=0.1509, Fare=0.139). Compare LR and RF AUC-ROC to understand linear vs. non-linear signal."
-expected_win_condition: "Validation AUC-ROC > 0.80 for at least one model."
-rollback_or_stop_condition: "Validation AUC-ROC < 0.70 for both models, or train/val AUC-ROC gap > 0.15 suggesting overfitting. If RF gap > 0.15, reduce max_depth or add min_samples_leaf."
+evaluation_focus: "Feature coefficients to confirm Sex and Fare dominate (MI scores: Sex=0.1509, Fare=0.139). Inspect val AUC-ROC and per-class recall for Survived=1."
+expected_win_condition: "Validation AUC-ROC > 0.80."
+rollback_or_stop_condition: "Validation AUC-ROC < 0.75 or val accuracy < 0.75 for both models."

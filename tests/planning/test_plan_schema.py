@@ -178,6 +178,25 @@ def test_missing_rationale_in_model_step_raises():
         validate_plan(plan)
 
 
+def test_multiple_model_steps_raises():
+    """model_steps with more than one entry should raise PlanValidationError."""
+    plan = {
+        "iteration": 1,
+        "objective": "Establish baseline.",
+        "hypotheses": [{"id": "H1", "description": "Test.", "expected_impact": "Moderate."}],
+        "feature_steps": [],
+        "model_steps": [
+            {"algorithm": "LR", "hyperparameters": {}, "rationale": "OK."},
+            {"algorithm": "RF", "hyperparameters": {}, "rationale": "Also OK."},
+        ],
+        "evaluation_focus": "AUC.",
+        "expected_win_condition": "AUC > 0.8.",
+        "rollback_or_stop_condition": "AUC < 0.7.",
+    }
+    with pytest.raises(PlanValidationError, match="model_steps"):
+        validate_plan(plan)
+
+
 def test_nonexistent_file_raises_file_not_found():
     """Passing a path that doesn't exist should raise FileNotFoundError."""
     with pytest.raises(FileNotFoundError):
