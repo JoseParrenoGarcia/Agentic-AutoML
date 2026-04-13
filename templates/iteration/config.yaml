@@ -1,0 +1,37 @@
+# Iteration config schema — generated per iteration by the Coder agent.
+# All fields are required unless marked optional.
+# Paths are relative to the iteration root directory.
+
+iteration: 1                          # int, 1-indexed
+random_seed: 42                       # int — set at top of main.py and recorded here
+
+project_root: "../../"                # relative path from iteration root to repo root
+
+data:
+  train: "../../data/raw/train.csv"   # str — path to training CSV
+  test: null                          # str or null — path to test CSV (no labels)
+
+target_column: "Survived"             # str — column name of the prediction target
+task_type: "binary_classification"    # str — binary_classification | multiclass | regression
+
+split:
+  method: "stratified"                # str — stratified | random | temporal
+                                      # Set by the Planner based on profile.json signals:
+                                      #   temporal_indicators → temporal
+                                      #   class imbalance     → stratified
+                                      #   otherwise           → random
+  val_ratio: 0.2                      # float — fraction used for val (stratified | random only)
+  time_column: null                   # str or null — required when method: temporal
+  cutoff: null                        # str (ISO date) or null — explicit cutoff for temporal split
+                                      # if null and method is temporal, val_ratio is used instead
+
+hyperparameters: {}                   # dict — model hyperparameters from plan model_steps
+
+output_paths:
+  metrics: "outputs/metrics.json"
+  predictions: "outputs/predictions.csv"
+  learning_curves: "outputs/learning_curves.json"
+  feature_importance: "outputs/feature_importance.json"
+  pipeline_metadata: "outputs/pipeline_metadata.json"
+  model: "outputs/model/"
+  log: "execution/log.txt"
