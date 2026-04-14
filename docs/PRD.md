@@ -1214,15 +1214,15 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 | M3.3 ✅ | Memory scaffold (`projects/titanic/memory/run-history.jsonl`, `projects/titanic/memory/decision-log.md`). Planner reads both on iteration > 1. |
 | M3.4 ✅ | 14 tests in `tests/planning/test_plan_schema.py` (validator schema, edge cases, exactly-one-model-step enforcement). Smoke test on Titanic produced a valid, profile-grounded `artifacts/plans/iteration-1.yaml` and `iteration-1.md`. |
 
-### M4 — Plan-to-Code Layer
-**Type:** Major | **Outcome:** System translates a plan into executable Python code using templates.
+### M4 — Plan-to-Code Layer ✅
+**Type:** Major | **Outcome:** System translates a validated iteration plan into executable Python code.
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M4.1 | Baseline experiment code template |
-| M4.2 | Feature step rendering into code |
-| M4.3 | Model step rendering into code |
-| M4.4 | Code-generation smoke tests |
+| M4.1 ✅ | Structural code templates (`templates/iteration/`): `main.py`, `data_loader.py`, `feature_engineering.py`, `model.py`, `evaluate.py`, `utils.py`, `config.yaml`. Establishes `fit_transform`/`transform` contract for leak-free feature engineering and split-strategy dispatch (`stratified`, `random`, `temporal`). |
+| M4.2 ✅ | Contract 5 added to `artifact-contracts.md` (iteration code outputs: metrics.json, predictions.csv, feature_importance.json, learning_curves.json, pipeline_metadata.json, model artifact). `coding-rules.md` path scope updated `runs/` → `iterations/`. |
+| M4.3 ✅ | Codegen validator (`src/codegen/validator.py` + `CodegenValidationError`): 6 checks — required files, config keys, syntax via `ast.parse`, no hardcoded paths, `if __name__` guard, feature-step count sanity. 8 tests in `tests/codegen/test_codegen_validator.py`, all green. |
+| M4.4 ✅ | Coder agent (`.claude/agents/coder.md`): 10-step workflow reading plan YAML + profile.json, generating all 8 iteration files, self-validating via codegen validator. Smoke test on Titanic iteration-1: validator passed, `python src/main.py` ran to completion, val AUC-ROC = 0.835 (win condition > 0.80 ✓). |
 
 ### M5 — Execution & Debugging Loop
 **Type:** Major | **Outcome:** Generated experiment can run, fail safely, and attempt bounded self-repair.

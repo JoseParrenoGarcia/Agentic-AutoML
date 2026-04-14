@@ -1,0 +1,5 @@
+{
+  "note": "LogisticRegression does not produce iterative learning curves. Null entry.",
+  "train": null,
+  "validation": null
+}
