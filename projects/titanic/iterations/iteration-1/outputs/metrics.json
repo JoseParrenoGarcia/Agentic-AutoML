@@ -1,0 +1,23 @@
+{
+  "primary": {
+    "name": "val_auc_roc",
+    "value": 0.8349143610013177
+  },
+  "secondary": {
+    "val_accuracy": 0.7932960893854749,
+    "val_f1": 0.725925925925926,
+    "val_precision": 0.7424242424242424,
+    "val_recall": 0.7101449275362319
+  },
+  "train": {
+    "train_auc_roc": 0.8702053451483975,
+    "train_accuracy": 0.8075842696629213
+  },
+  "validation": {
+    "val_auc_roc": 0.8349143610013177,
+    "val_accuracy": 0.7932960893854749,
+    "val_f1": 0.725925925925926,
+    "val_precision": 0.7424242424242424,
+    "val_recall": 0.7101449275362319
+  }
+}

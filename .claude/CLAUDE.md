@@ -3,7 +3,7 @@
 A Claude Code–orchestrated system for iterative ML experimentation on tabular data. The core loop: dataset analysis → structured planning → code generation → execution → model evaluation → review → memory → repeat. Produces fully auditable artifacts and experiment history.
 
 **Primary user:** Jose
-**Active milestone:** M4 — Plan-to-Code Layer (next)
+**Active milestone:** M5 — Execution & Debugging Loop (next)
 
 ---
 
@@ -20,13 +20,13 @@ A Claude Code–orchestrated system for iterative ML experimentation on tabular 
 | `docs/` | PRD and planning docs | Active |
 | `references/` | Claude Code best-practices, external papers | README stub ✅ (M0.3) |
 | `knowledge-base/` | Per-project memory, benchmarks, artifacts | README stub ✅ (M0.3) |
-| `.claude/agents/` | Agent instruction files | Created, no agents yet |
+| `.claude/agents/` | Agent instruction files | `dataset-analyser` ✅ (M2), `planner` ✅ (M3), `coder` ✅ (M4) |
 | `.claude/skills/` | Authoring skill files (create-agent, create-hook, create-rule, create-skill) | 4 skills ✅ (M0.5) |
-| `.claude/rules/` | Behavioural guardrails, artifact contracts, ML constraints | `authoring.md` ✅, `coding-rules.md` ✅, `artifact-contracts.md` ✅ (M0.4) |
+| `.claude/rules/` | Behavioural guardrails, artifact contracts, ML constraints | `authoring.md` ✅, `coding-rules.md` ✅ (scoped to `iterations/`), `artifact-contracts.md` ✅ 5 contracts (M0.4, M4) |
 | `.claude/hooks/` | Automation hooks | Pending (M0.3) |
-| `templates/` | Artifact templates: model-report, experiment YAML, etc. | `plans/iteration.yaml` ✅ (M3); others pending (M0.2) |
-| `src/` | Shared Python utilities | `analysis/` module ✅ (M2), `planning/` module ✅ (M3) |
-| `projects/` | Per-project experiment folders and results | Titanic project ✅ (M2) |
+| `templates/` | Artifact templates | `plans/iteration.yaml` ✅ (M3); `iteration/` code templates ✅ (M4) |
+| `src/` | Shared Python utilities | `analysis/` ✅ (M2), `planning/` ✅ (M3), `codegen/` ✅ (M4) |
+| `projects/` | Per-project experiment folders and results | Titanic project ✅ (M2); iteration-1 code + run ✅ (M4) |
 
 ---
 
@@ -41,8 +41,8 @@ A Claude Code–orchestrated system for iterative ML experimentation on tabular 
 Behavioural and maintenance rules live in `.claude/rules/` (auto-loaded each session):
 
 - `authoring.md` — guardrail: load the correct authoring skill before creating/restructuring any agent, skill, hook, rule, or memory file
-- `coding-rules.md` — path-scoped to `runs/`; 10 coding rules for Coder-generated scripts ✅ (M0.4)
-- `artifact-contracts.md` — unconditional; 4 artifact schema contracts (profile.json, iteration YAML, run-history, model-report) ✅ (M0.4)
+- `coding-rules.md` — path-scoped to `iterations/`; 10 coding rules for Coder-generated scripts ✅ (M0.4)
+- `artifact-contracts.md` — unconditional; 5 artifact schema contracts (profile.json, iteration YAML, run-history, model-report, iteration code outputs) ✅ (M0.4, M4)
 - `ml-experiment-constraints.md` — data validation, reproducibility, benchmark tracking (pending)
 - `maintenance.md` — what to update when significant changes happen (pending)
 

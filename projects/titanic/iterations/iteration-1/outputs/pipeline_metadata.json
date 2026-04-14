@@ -1,0 +1,50 @@
+{
+  "stages": [
+    {
+      "name": "data_loading",
+      "input_shape": [
+        712,
+        12
+      ],
+      "output_shape": [
+        179,
+        12
+      ],
+      "duration_s": 0.0091,
+      "warnings": []
+    },
+    {
+      "name": "feature_engineering",
+      "input_shape": [
+        712,
+        10
+      ],
+      "output_shape": [
+        712,
+        9
+      ],
+      "duration_s": 0.0039,
+      "warnings": []
+    },
+    {
+      "name": "model_training",
+      "input_shape": [
+        712,
+        9
+      ],
+      "output_shape": [
+        712,
+        9
+      ],
+      "duration_s": 0.0119,
+      "warnings": []
+    }
+  ],
+  "total_duration_s": 0.0249,
+  "python_version": "3.11.11 (main, Feb 10 2026, 12:23:03) [Clang 17.0.0 (clang-1700.0.13.5)]",
+  "packages": {
+    "scikit-learn": "1.8.0",
+    "pandas": "3.0.2",
+    "numpy": "2.4.4"
+  }
+}
