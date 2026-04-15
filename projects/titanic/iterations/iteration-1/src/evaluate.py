@@ -107,14 +107,19 @@ def evaluate_model(
     })
     preds_df.to_csv(out["predictions"], index=False)
 
-    # --- Write feature_importance.json (coefficients) ---
+    # --- Write feature_importance.json (Contract 5 schema) ---
     feature_names = X_val.columns.tolist()
     coefs = model.coef_[0].tolist()
+    feat_imp_pairs = sorted(
+        zip(feature_names, [abs(c) for c in coefs]),
+        key=lambda x: x[1],
+        reverse=True,
+    )
     feature_importance = {
-        "type": "logistic_regression_coefficients",
-        "features": feature_names,
-        "coefficients": coefs,
-        "intercept": float(model.intercept_[0]),
+        "method": "logistic_regression_coefficients",
+        "features": [{"name": n, "importance": v} for n, v in feat_imp_pairs],
+        "sorted": True,
+        "model": type(model).__name__,
     }
     with open(out["feature_importance"], "w") as f:
         json.dump(feature_importance, f, indent=2)
@@ -138,15 +143,12 @@ def evaluate_model(
     model_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, model_dir / "model.pkl")
 
+    from datetime import datetime, timezone
     model_meta = {
-        "algorithm": type(model).__name__,
-        "iteration": config["iteration"],
-        "task_type": config["task_type"],
-        "hyperparameters": config["hyperparameters"],
-        "random_seed": config["random_seed"],
-        "feature_names": feature_names,
-        "n_features": len(feature_names),
-        "classes": model.classes_.tolist(),
+        "model_class": type(model).__name__,
+        "feature_list": feature_names,
+        "training_timestamp": datetime.now(timezone.utc).isoformat(),
+        "n_train_samples": len(X_train),
     }
     with open(model_dir / "metadata.json", "w") as f:
         json.dump(model_meta, f, indent=2)

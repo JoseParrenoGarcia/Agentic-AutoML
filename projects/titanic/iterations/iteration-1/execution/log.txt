@@ -1,11 +1,11 @@
-2026-04-14T07:18:14 INFO Iteration 1 started
-2026-04-14T07:18:14 INFO Loading data
-2026-04-14T07:18:14 INFO Train shape: (712, 12)  Val shape: (179, 12)
-2026-04-14T07:18:14 INFO Engineering features
-2026-04-14T07:18:14 INFO Feature matrix shape: (712, 9)
-2026-04-14T07:18:14 INFO Training model
-2026-04-14T07:18:14 INFO Training complete: LogisticRegression
-2026-04-14T07:18:14 INFO Evaluating model and writing artifacts
-2026-04-14T07:18:14 INFO Primary metric: val_auc_roc = 0.8349
-2026-04-14T07:18:14 INFO Artifacts written to outputs/metrics.json
-2026-04-14T07:18:14 INFO Iteration 1 complete
+2026-04-15T12:03:41 INFO Iteration 1 started
+2026-04-15T12:03:41 INFO Loading data
+2026-04-15T12:03:41 INFO Train shape: (712, 12)  Val shape: (179, 12)
+2026-04-15T12:03:41 INFO Engineering features
+2026-04-15T12:03:41 INFO Feature matrix shape: (712, 9)
+2026-04-15T12:03:41 INFO Training model
+2026-04-15T12:03:41 INFO Training complete: LogisticRegression
+2026-04-15T12:03:41 INFO Evaluating model and writing artifacts
+2026-04-15T12:03:41 INFO Primary metric: val_auc_roc = 0.8349
+2026-04-15T12:03:41 INFO Artifacts written to outputs/metrics.json
+2026-04-15T12:03:41 INFO Iteration 1 complete

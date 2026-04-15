@@ -89,3 +89,38 @@ For non-iterative models (e.g. LogisticRegression):
 ```
 
 **`config.yaml`** — required keys: `iteration`, `random_seed`, `target_column`, `task_type`, `data`, `split`, `hyperparameters`, `output_paths`. Validated by `src/codegen/validator.py`.
+
+## Contract 6: Execution artifacts
+
+Written by Executor agent (M5). Read by Reviewer (M6) and Planner (iteration > 1).
+
+**`execution/manifest.json`**
+```json
+{
+  "iteration":            "<int>",
+  "timestamp":            "<ISO 8601>",
+  "status":               "success | failed",
+  "exit_code":            "<int>",
+  "duration_s":           "<float>",
+  "python_version":       "<str>",
+  "packages":             {"<name>": "<version>"},
+  "error_class":          "<str | null>",
+  "error_summary":        "<str | null>",
+  "retry_count":          "<int>",
+  "artifacts_validated":  "<bool>"
+}
+```
+
+**`execution/retry-log.jsonl`** — append-only, one JSON object per line. Written only when debug retries occur.
+```json
+{
+  "attempt":           "<int>",
+  "timestamp":         "<ISO 8601>",
+  "error_class":       "<str>",
+  "stage":             "<int — 1 or 2>",
+  "error_summary":     "<str>",
+  "file_modified":     "<str>",
+  "patch_description": "<str>",
+  "outcome":           "fixed | still_failing | regression"
+}
+```

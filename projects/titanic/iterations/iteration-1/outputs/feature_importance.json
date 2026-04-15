@@ -1,26 +1,43 @@
 {
-  "type": "logistic_regression_coefficients",
+  "method": "logistic_regression_coefficients",
   "features": [
-    "Pclass",
-    "Sex",
-    "Age",
-    "SibSp",
-    "Parch",
-    "Fare",
-    "has_cabin",
-    "Embarked_Q",
-    "Embarked_S"
+    {
+      "name": "Sex",
+      "importance": 2.523410263662234
+    },
+    {
+      "name": "has_cabin",
+      "importance": 0.7959453054911912
+    },
+    {
+      "name": "Pclass",
+      "importance": 0.6008878429948415
+    },
+    {
+      "name": "Fare",
+      "importance": 0.40291563419942206
+    },
+    {
+      "name": "Embarked_Q",
+      "importance": 0.3398610632817082
+    },
+    {
+      "name": "SibSp",
+      "importance": 0.33475546915584764
+    },
+    {
+      "name": "Embarked_S",
+      "importance": 0.2701168288697415
+    },
+    {
+      "name": "Parch",
+      "importance": 0.1748149662538562
+    },
+    {
+      "name": "Age",
+      "importance": 0.039500278360008974
+    }
   ],
-  "coefficients": [
-    -0.6008878429948415,
-    2.523410263662234,
-    -0.039500278360008974,
-    -0.33475546915584764,
-    -0.1748149662538562,
-    0.40291563419942206,
-    0.7959453054911912,
-    0.3398610632817082,
-    -0.2701168288697415
-  ],
-  "intercept": 0.055795613227836716
+  "sorted": true,
+  "model": "LogisticRegression"
 }
