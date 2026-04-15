@@ -45,9 +45,19 @@ TITANIC_ITERATION_1 = Path("projects/titanic/iterations/iteration-1")
 
 @pytest.fixture
 def titanic_copy(tmp_path):
-    """Copy iteration-1 to a temp dir with absolutized data paths."""
+    """Copy iteration-1 to a temp dir with absolutized data paths.
+
+    Skips if the iteration directory or its raw data files are missing
+    (data is gitignored, so CI won't have it).
+    """
     if not TITANIC_ITERATION_1.exists():
         pytest.skip("Titanic iteration-1 not present")
+
+    # Check that raw data exists (gitignored — not available in CI)
+    train_csv = (TITANIC_ITERATION_1 / "../../data/raw/train.csv").resolve()
+    if not train_csv.exists():
+        pytest.skip("Titanic raw data not present (gitignored)")
+
     target = tmp_path / "iteration-1"
     shutil.copytree(TITANIC_ITERATION_1, target)
 
