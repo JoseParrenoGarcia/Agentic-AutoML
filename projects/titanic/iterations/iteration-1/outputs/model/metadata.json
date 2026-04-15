@@ -1,16 +1,6 @@
 {
-  "algorithm": "LogisticRegression",
-  "iteration": 1,
-  "task_type": "binary_classification",
-  "hyperparameters": {
-    "solver": "lbfgs",
-    "max_iter": 1000,
-    "C": 1.0,
-    "class_weight": null,
-    "random_state": 42
-  },
-  "random_seed": 42,
-  "feature_names": [
+  "model_class": "LogisticRegression",
+  "feature_list": [
     "Pclass",
     "Sex",
     "Age",
@@ -21,9 +11,6 @@
     "Embarked_Q",
     "Embarked_S"
   ],
-  "n_features": 9,
-  "classes": [
-    0,
-    1
-  ]
+  "training_timestamp": "2026-04-15T09:58:44.696040+00:00",
+  "n_train_samples": 712
 }
