@@ -55,6 +55,10 @@ projects/*/data/processed/
 # Generated artifacts
 projects/*/artifacts/
 
+# Iteration runtime outputs (regenerated on every run)
+projects/*/iterations/*/execution/
+projects/*/iterations/*/outputs/
+
 # pytest tmp_path directories
 pytest-of-*/
 
