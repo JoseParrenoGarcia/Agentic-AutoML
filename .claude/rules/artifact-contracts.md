@@ -22,9 +22,72 @@ Written by post-run hooks. Read by Planner on iteration > 1.
 
 Append-only. Each line is a self-contained JSON object. Required fields per record: `iteration` (int), `timestamp` (ISO 8601), `status` (completed|failed), `plan_summary` (str), `primary_metric` (object with `name`, `value`, `delta`), `model_family` (str), `reviewer_verdict` (str), `router_decision` (str). Agents must not rewrite or delete existing lines.
 
-## Contract 4: `model-report.json` (stub)
+## Contract 4: `model-report.json`
 
-Written by Model Report Builder at M6. Required fields (stub): `iteration` (int), `primary_metric` (object), `secondary_metrics` (object), `feature_importance` (object), `overfitting_check` (object).
+Written by Model Report Builder (M6). Read by Reviewer (M7) and Action Router (M7). Path: `iterations/iteration-<n>/reports/model-report.json`. Validated by `src/evaluation/validator.py`.
+
+Required top-level keys: `schema_version`, `iteration`, `task_type`, `generated_at`, `headline_metrics`, `overfitting_check`, `leakage_indicators`, `error_analysis`, `feature_importance`, `prior_run_comparison` (null on iter 1), `reviewer_summary`, `plots`.
+
+Optional (classification only): `calibration`, `segment_analysis`.
+
+```json
+{
+  "schema_version": "1.0.0",
+  "iteration": "<int>",
+  "task_type": "binary_classification | multiclass | regression",
+  "generated_at": "<ISO 8601>",
+  "headline_metrics": {
+    "primary": {"name": "<str>", "value": "<float>"},
+    "secondary": {"<metric_name>": "<float>"},
+    "train": {"<metric_name>": "<float>"},
+    "validation": {"<metric_name>": "<float>"}
+  },
+  "overfitting_check": {
+    "train_val_gap": {"metric": "<str>", "train": "<float>", "val": "<float>", "gap": "<float>", "gap_pct": "<float>"},
+    "severity": "low | medium | high",
+    "learning_curve_trend": "improving | plateau | diverging | unavailable",
+    "verdict": "<str>"
+  },
+  "leakage_indicators": {
+    "suspiciously_high_metric": "<bool>",
+    "feature_importance_anomalies": ["<str>"],
+    "verdict": "<str>"
+  },
+  "calibration": {
+    "brier_score": "<float>",
+    "reliability_curve": {"bin_edges": ["<float>"], "mean_predicted": ["<float>"], "fraction_positive": ["<float>"], "bin_counts": ["<int>"]}
+  },
+  "segment_analysis": {
+    "segments": [{"column": "<str>", "type": "categorical | numeric_binned", "slices": [{"value": "<str>", "n": "<int>", "primary_metric": "<float>", "accuracy": "<float>"}]}]
+  },
+  "error_analysis": {
+    "confusion_matrix": {"tp": "<int>", "fp": "<int>", "fn": "<int>", "tn": "<int>"},
+    "misclassification_patterns": [{"pattern": "<str>", "detail": "<str>"}],
+    "error_rate_by_confidence": [{"confidence_bin": "<str>", "n": "<int>", "error_rate": "<float>"}]
+  },
+  "feature_importance": {
+    "method": "<str>", "model": "<str>",
+    "features": [{"name": "<str>", "importance": "<float>", "rank": "<int>"}]
+  },
+  "prior_run_comparison": null | {
+    "previous_iteration": "<int>",
+    "deltas": [{"metric": "<str>", "previous": "<float>", "current": "<float>", "delta": "<float>", "improved": "<bool>"}]
+  },
+  "reviewer_summary": {
+    "headline_verdict": "improved | degraded | neutral | suspicious",
+    "metric_summary": {"primary_metric": "<float>", "delta_vs_previous": "<float | null>", "delta_vs_baseline": "<float | null>"},
+    "risk_flags": [{"type": "leakage | overfitting | underfitting | data_issue", "severity": "low | medium | high", "evidence": "<str>"}],
+    "plateau_signal": {"detected": "<bool>", "consecutive_stale_iterations": "<int>"}
+  },
+  "plots": {
+    "confusion_matrix": "<relative path | null>",
+    "actual_vs_predicted": "<relative path>",
+    "calibration_curve": "<relative path | null>",
+    "error_distribution": "<relative path>",
+    "feature_diagnostics": ["<relative path>"]
+  }
+}
+```
 
 ## Contract 5: Iteration code outputs
 
