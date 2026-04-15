@@ -396,33 +396,49 @@ runs/iteration-<n>/src/
 
 ### 6.5 Model Report Builder
 
-**Purpose:** Transform raw run outputs into a comprehensive evaluation package.
+**Purpose:** Transform raw run outputs into a comprehensive evaluation package that gives a principal data scientist (and the M7 Reviewer) everything needed to judge an iteration without re-running any computation.
 
 **Inputs:**
-- Trained model outputs (predictions, probabilities)
-- Raw metrics from evaluation script
-- Plots and learning curves
-- Run metadata and manifest
+- Contract 5 artifacts: `metrics.json`, `predictions.csv`, `feature_importance.json`, `learning_curves.json`, `pipeline_metadata.json`
+- Contract 6 artifacts: `execution/manifest.json`
+- `config.yaml` (for re-splitting to recover validation features)
+- `profile.json` (for segment column selection)
+- Previous `model-report.json` files (for prior-run comparison and plateau detection)
 
 **Outputs:**
-- `runs/iteration-<n>/reports/model-report.json` — machine-readable metrics and diagnostics
-- `runs/iteration-<n>/reports/model-report.md` — human-readable evaluation narrative
+- `iterations/iteration-<n>/reports/model-report.json` — machine-readable evaluation (Contract 4, schema v1.1.0). Self-contained: M7 reads only this file.
+- `iterations/iteration-<n>/reports/model-report.md` — human-readable narrative written by the agent
+- `iterations/iteration-<n>/reports/plots/` — PNG evaluation plots
+
+**Implementation:** Deterministic Python in `src/evaluation/` (metrics, analysis, plots, report assembly, validation). Agent (`.claude/agents/model-report-builder.md`) orchestrates the Python scripts then writes the interpretive narrative.
 
 **Report Contents:**
-- **Headline metrics:** Primary optimisation metric + secondary metrics
-- **Actual vs predicted:** Scatter plots (regression), confusion matrix (classification)
-- **Segment analysis:** Performance breakdown by key features or data slices
-- **Feature importance:** Permutation importance or model-native importance scores
-- **Per-feature diagnostic plots:** For the top-N most important features, overlay actual vs predicted values against the feature axis to visualise where the model captures or misses the underlying relationship. This is the key visual a principal data scientist uses to spot systematic model failures.
-- **Error distribution:** Residual analysis (regression), misclassification patterns (classification)
-- **Calibration assessment:** Probability calibration curves (classification)
-- **Leakage indicators:** Suspiciously high metrics, feature importance anomalies
-- **Overfitting signals:** Train/validation gap, learning curve analysis
-- **Comparison to prior runs:** Delta metrics table against previous iterations
+- **Headline metrics:** Primary + secondary metrics, train vs validation split
+- **Overfitting check:** Train/val gap with severity classification (low < 5%, medium 5–15%, high > 15%), learning curve trend analysis
+- **Leakage indicators:** Suspiciously high metrics (> 0.99), dominant feature detection (> 80% of total importance)
+- **Calibration:** Brier score + reliability curve with bin counts (classification only)
+- **Decision threshold analysis:** ROC curve, precision-recall curve, optimal threshold via F1 grid search, comparison of metrics at optimal vs default (0.5) threshold. Answers "should we use a different cutoff?"
+- **Bootstrap confidence intervals:** 1000-resample CIs (95%) on primary and secondary metrics. Quantifies whether observed improvements are statistically meaningful given the validation set size
+- **Prediction separation quality:** KS statistic, discrimination slope, histogram overlap coefficient. Qualitative assessment: strong/moderate/weak
+- **Segment analysis:** Auto-selected slicing columns (categorical ≤ 10 unique, top-2 numeric by importance binned into quartiles). Per-slice primary metric and accuracy
+- **Error analysis:** Confusion matrix (classification), residual stats (regression), misclassification patterns, error rate by confidence bin
+- **Hardest samples:** Top-10 highest-loss predictions (cross-entropy for classification, absolute residual for regression). Surfaces data quality issues and model blind spots
+- **Feature importance:** Repackaged with rank. Model-native method (coefficients, Gini, etc.)
+- **Per-feature diagnostic plots:** Top-5 features — box plots of feature values for correct vs incorrect predictions
+- **Residual vs feature plots:** Top-5 features — scatter of prediction/residual against feature value, coloured by correctness. Reveals systematic error patterns across feature ranges
+- **Comparison to prior runs:** Delta table for all metrics vs previous iteration. Null on iteration 1
+- **Reviewer summary:** Pre-computed deterministic verdict (improved/degraded/neutral/suspicious), risk flags ({type, severity, evidence}), plateau signal (consecutive stale iterations)
+
+**Plots (10 on Titanic baseline):**
+- `confusion_matrix.png`, `actual_vs_predicted.png`, `calibration_curve.png`, `error_distribution.png`
+- `roc_curve.png`, `precision_recall_curve.png`
+- `feature_diagnostic_<name>.png` (top features)
+- `residual_vs_<name>.png` (top features)
 
 **Non-responsibilities:**
 - Deciding whether results are good enough (that is the Reviewer's job)
-- Choosing next steps
+- Choosing next steps (that is the Action Router's job)
+- Recommending experiments or strategy changes
 
 ---
 
@@ -1224,25 +1240,25 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 | M4.3 ✅ | Codegen validator (`src/codegen/validator.py` + `CodegenValidationError`): 6 checks — required files, config keys, syntax via `ast.parse`, no hardcoded paths, `if __name__` guard, feature-step count sanity. 8 tests in `tests/codegen/test_codegen_validator.py`, all green. |
 | M4.4 ✅ | Coder agent (`.claude/agents/coder.md`): 10-step workflow reading plan YAML + profile.json, generating all 8 iteration files, self-validating via codegen validator. Smoke test on Titanic iteration-1: validator passed, `python src/main.py` ran to completion, val AUC-ROC = 0.835 (win condition > 0.80 ✓). |
 
-### M5 — Execution & Debugging Loop
+### M5 — Execution & Debugging Loop ✅
 **Type:** Major | **Outcome:** Generated experiment can run, fail safely, and attempt bounded self-repair.
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M5.1 | Run executor and log capture |
-| M5.2 | Runtime manifest generation |
-| M5.3 | Two-stage bounded debugger with retry classification |
-| M5.4 | Tests for syntax, dependency, and runtime failure scenarios |
+| M5.1 ✅ | Run executor (`src/execution/runner.py`) and log capture. `ExecutionResult` dataclass with exit code, stdout, stderr, duration. |
+| M5.2 ✅ | Runtime manifest generation (`execution/manifest.json`). Contract 6 added to `artifact-contracts.md`. |
+| M5.3 ✅ | Two-stage bounded debugger with retry classification (`src/execution/classifier.py`). `ErrorCategory` enum (syntax, import, type, data_shape, nan, convergence, runtime, timeout, unknown). Stage 1: max 3 retries. Stage 2: max 2 retries. Total cap 5. |
+| M5.4 ✅ | Executor agent (`.claude/agents/executor.md`): 7-step workflow with pre-flight validation, output validation, and bounded debug loop. Tests: `test_runner.py`, `test_classifier.py`, `test_output_validator.py`, `test_integration.py` (including Titanic end-to-end). |
 
-### M6 — Evaluation & Model Reporting
+### M6 — Evaluation & Model Reporting ✅
 **Type:** Major | **Outcome:** Every run ends with a deep evaluation package.
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M6.1 | Base metric calculators by problem type |
-| M6.2 | Actual-vs-predicted and segment analysis |
-| M6.3 | Feature-importance and explainability hooks |
-| M6.4 | Emit `model-report.json` and `model-report.md` |
+| M6.1 ✅ | Core metric analysis (`src/evaluation/metrics.py`): headline repackaging, overfitting check (train/val gap with severity thresholds), leakage detection (suspicious metrics + dominant feature), risk flag classification, plateau signal, bootstrap confidence intervals (1000 resamples, 95% CI). |
+| M6.2 ✅ | Analysis functions (`src/evaluation/analysis.py`): calibration (Brier score + reliability curve), segment analysis (auto-select categorical ≤10 unique + top-2 numeric by importance), error analysis (confusion matrix + error rate by confidence bin), decision threshold analysis (ROC/PR curves + optimal threshold via F1 grid search), prediction separation quality (KS statistic + discrimination slope + histogram overlap), hardest samples (top-10 highest-loss predictions). |
+| M6.3 ✅ | Evaluation plots (`src/evaluation/plots.py`): confusion matrix, actual-vs-predicted, calibration curve, error distribution, ROC curve, precision-recall curve, per-feature diagnostics (box plots), residual-vs-feature scatter plots. 10 plots on Titanic baseline. |
+| M6.4 ✅ | Report assembly (`src/evaluation/report_builder.py`), validator (`src/evaluation/validator.py` + `ReportValidationError`), Model Report Builder agent (`.claude/agents/model-report-builder.md`). Contract 4 expanded from stub to full schema (v1.1.0, 18 top-level keys). Agent runs deterministic Python then writes interpretive `model-report.md` narrative. 60 tests across 5 test files, all green. Smoke-tested on Titanic iteration-1. |
 
 ### M7 — Reviewer & Action Router
 **Type:** Major | **Outcome:** System judges outcomes and chooses the next loop step.
