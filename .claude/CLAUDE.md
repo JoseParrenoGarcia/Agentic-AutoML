@@ -3,7 +3,7 @@
 A Claude Code–orchestrated system for iterative ML experimentation on tabular data. The core loop: dataset analysis → structured planning → code generation → execution → model evaluation → review → memory → repeat. Produces fully auditable artifacts and experiment history.
 
 **Primary user:** Jose
-**Active milestone:** M9 — Orchestrator Skill ✅ (complete; M10 next)
+**Active milestone:** M10 — Token & Cost Tracking (M9 complete; M10–M15 are new milestones; M16=KB, M17=Benchmark)
 
 ---
 
