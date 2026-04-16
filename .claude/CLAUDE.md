@@ -22,11 +22,11 @@ A Claude Code–orchestrated system for iterative ML experimentation on tabular 
 | `knowledge-base/` | Per-project memory, benchmarks, artifacts | README stub ✅ (M0.3) |
 | `.claude/agents/` | Agent instruction files | `dataset-analyser` ✅ (M2), `planner` ✅ (M3, updated M7), `coder` ✅ (M4), `executor` ✅ (M5), `model-report-builder` ✅ (M6), `reviewer-router` ✅ (M7) |
 | `.claude/skills/` | Authoring skill files (create-agent, create-hook, create-rule, create-skill) | 4 skills ✅ (M0.5) |
-| `.claude/rules/` | Behavioural guardrails, artifact contracts, ML constraints | `authoring.md` ✅, `coding-rules.md` ✅ (scoped to `iterations/`), `artifact-contracts.md` ✅ 6 contracts (M0.4, M4, M5) |
+| `.claude/rules/` | Behavioural guardrails, artifact contracts, ML constraints | `authoring.md` ✅, `coding-rules.md` ✅ (scoped to `iterations/`), `artifact-contracts.md` ✅ 6 contracts (M0.4, M4, M5, M7) |
 | `.claude/hooks/` | Automation hooks | Pending (M0.3) |
 | `templates/` | Artifact templates | `plans/iteration.yaml` ✅ (M3); `iteration/` code templates ✅ (M4) |
 | `src/` | Shared Python utilities | `analysis/` ✅ (M2), `planning/` ✅ (M3), `codegen/` ✅ (M4), `execution/` ✅ (M5), `evaluation/` ✅ (M6), `review/` ✅ (M7) |
-| `projects/` | Per-project experiment folders and results | Titanic project ✅ (M2); iteration-1 code + run ✅ (M4) |
+| `projects/` | Per-project experiment folders and results | Titanic project ✅ (M2); iteration-1 code + run ✅ (M4); iteration-1 review ✅ (M7) |
 
 ---
 
