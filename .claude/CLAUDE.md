@@ -3,7 +3,7 @@
 A Claude Code–orchestrated system for iterative ML experimentation on tabular data. The core loop: dataset analysis → structured planning → code generation → execution → model evaluation → review → memory → repeat. Produces fully auditable artifacts and experiment history.
 
 **Primary user:** Jose
-**Active milestone:** M9 — Orchestrator Skill (in progress)
+**Active milestone:** M9 — Orchestrator Skill ✅ (complete; M10 next)
 
 ---
 
@@ -20,13 +20,13 @@ A Claude Code–orchestrated system for iterative ML experimentation on tabular 
 | `docs/` | PRD and planning docs | Active |
 | `references/` | Claude Code best-practices, external papers | README stub ✅ (M0.3) |
 | `knowledge-base/` | Per-project memory, benchmarks, artifacts | README stub ✅ (M0.3) |
-| `.claude/agents/` | Agent instruction files | `dataset-analyser` ✅ (M2), `planner` ✅ (M3, updated M7, M8), `coder` ✅ (M4), `executor` ✅ (M5), `model-report-builder` ✅ (M6), `reviewer-router` ✅ (M7, M8) |
+| `.claude/agents/` | Agent instruction files | `dataset-analyser` ✅ (M2), `planner` ✅ (M3, updated M7, M8), `coder` ✅ (M4), `executor` ✅ (M5), `model-report-builder` ✅ (M6, discovery fix M9), `reviewer-router` ✅ (M7, M8, discovery fix M9) |
 | `.claude/skills/` | Authoring skill files + orchestrator | 4 authoring skills ✅ (M0.5), `orchestrator` ✅ (M9) |
 | `.claude/rules/` | Behavioural guardrails, artifact contracts, ML constraints | `authoring.md` ✅, `coding-rules.md` ✅ (scoped to `iterations/`), `artifact-contracts.md` ✅ 6 contracts (M0.4, M4, M5, M7) |
 | `.claude/hooks/` | Automation hooks | Pending (M0.3) |
 | `templates/` | Artifact templates | `plans/iteration.yaml` ✅ (M3); `iteration/` code templates ✅ (M4) |
 | `src/` | Shared Python utilities | `analysis/` ✅ (M2), `planning/` ✅ (M3), `codegen/` ✅ (M4), `execution/` ✅ (M5), `evaluation/` ✅ (M6), `review/` ✅ (M7, M8) |
-| `projects/` | Per-project experiment folders and results | Titanic project ✅ (M2); iteration-1 code + run ✅ (M4); iteration-1 review ✅ (M7); iteration-2 smoke test ✅; decision-log backfill ✅ (M8) |
+| `projects/` | Per-project experiment folders and results | Titanic project ✅ (M2); iterations 1–4 ✅ (M4–M8); iterations 5–6 ✅ (M9 orchestrator test); best: iter-6 StackingClassifier val_auc_roc=0.856 |
 
 ---
 
