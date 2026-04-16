@@ -1258,7 +1258,7 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 | M6.1 ✅ | Core metric analysis (`src/evaluation/metrics.py`): headline repackaging, overfitting check (train/val gap with severity thresholds), leakage detection (suspicious metrics + dominant feature), risk flag classification, plateau signal, bootstrap confidence intervals (1000 resamples, 95% CI). |
 | M6.2 ✅ | Analysis functions (`src/evaluation/analysis.py`): calibration (Brier score + reliability curve), segment analysis (auto-select categorical ≤10 unique + top-2 numeric by importance), error analysis (confusion matrix + error rate by confidence bin), decision threshold analysis (ROC/PR curves + optimal threshold via F1 grid search), prediction separation quality (KS statistic + discrimination slope + histogram overlap), hardest samples (top-10 highest-loss predictions). |
 | M6.3 ✅ | Evaluation plots (`src/evaluation/plots.py`): confusion matrix, actual-vs-predicted, calibration curve, error distribution, ROC curve, precision-recall curve, per-feature diagnostics (box plots), residual-vs-feature scatter plots. 10 plots on Titanic baseline. |
-| M6.4 ✅ | Report assembly (`src/evaluation/report_builder.py`), validator (`src/evaluation/validator.py` + `ReportValidationError`), Model Report Builder agent (`.claude/agents/model-report-builder.md`). Contract 4 expanded from stub to full schema (v1.1.0, 18 top-level keys). Agent runs deterministic Python then writes interpretive `model-report.md` narrative. 60 tests across 5 test files, all green. Smoke-tested on Titanic iteration-1. |
+| M6.4 ✅ | Report assembly (`src/evaluation/report_builder.py`), validator (`src/evaluation/validator.py` + `ReportValidationError`), Model Report Builder agent (`.claude/agents/model-report-builder.md`). Contract 4 expanded from stub to full schema (v1.1.0, 18 top-level keys). Agent runs deterministic Python then writes interpretive `model-report.md` narrative. 60 tests across 5 test files, all green. Smoke-tested on Titanic iteration-1. Discovery step updated M9: uses explicit Python sort by iteration number instead of Glob modification-time ordering. |
 
 ### M7 — Reviewer & Action Router
 **Type:** Major | **Outcome:** System judges outcomes and chooses the next loop step.
@@ -1294,7 +1294,7 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 | M8.3 ✅ | Retrieval helper for planner and reviewer inputs. `src/review/history.py` provides `load_run_history()` + `summarise_history()`. Planner agent updated to use `summarise_history()` in Step 2. Reviewer-router passes `decision_log_path` to writer. |
 | M8.4 ✅ | 16 tests in `tests/test_memory.py`: decision-log creation, append, format, JSONL/markdown consistency, atomicity on validation failure, `summarise_history()` correctness, backfill consistency, round-trip, edge cases. |
 
-### M9 — Orchestrator Skill
+### M9 — Orchestrator Skill ✅
 **Type:** Major | **Outcome:** A single skill invocation runs the full ML experiment loop end-to-end, from raw data to final model, with no human intervention.
 
 > **Design decisions:**
@@ -1304,12 +1304,15 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 > - **No human gates.** Fully autonomous execution. Matches the benchmark goal of "at least 5 Kaggle datasets run fully without manual intervention."
 > - **Artifact gate checks.** Between each agent step, the skill verifies the expected output artifacts exist before proceeding. Fails loudly if an agent produces incomplete output.
 
+> **Bugs found and fixed during M9 smoke test (2026-04-16):**
+> - **Agent discovery bug (model-report-builder + reviewer-router):** Both agents were discovering iterations by file modification time (Glob default order) rather than iteration number. After repeated agent runs, an older iteration's files became more recently modified than the newest iteration, causing agents to target the wrong directory. Fixed by replacing the prose "newest first" instruction with an explicit Python Bash command that sorts by the integer in the directory name. This fix is durable — agents cannot be misled by modification-time ordering regardless of how many times other agents touch prior iteration files.
+
 | Minor Milestone | Deliverable |
 |---|---|
-| M9.1 | Orchestrator skill file (`.claude/skills/orchestrator/SKILL.md`) defining the full loop sequence, artifact gate checks, and stop conditions. |
-| M9.2 | Error handling and recovery: what happens when an agent fails after retries, when artifacts are missing, or when the loop hits max iterations. Escalation to human on unrecoverable failure. |
-| M9.3 | Progress reporting: structured status output after each iteration (iteration number, metric, verdict, route, time elapsed). Final summary on loop completion. |
-| M9.4 | Smoke test: run the full orchestrator on Titanic from iteration 3 (existing state) through to `sufficient` or max iterations. Validate all artifacts, decision-log entries, and run-history consistency. |
+| M9.1 ✅ | Orchestrator skill file (`.claude/skills/orchestrator/SKILL.md`) defining the full loop sequence, artifact gate checks, and stop conditions. |
+| M9.2 ✅ | Error handling and recovery: what happens when an agent fails after retries, when artifacts are missing, or when the loop hits max iterations. Escalation to human on unrecoverable failure. |
+| M9.3 ✅ | Progress reporting: structured status output after each iteration (iteration number, metric, verdict, route, time elapsed). Final summary on loop completion. |
+| M9.4 ✅ | Smoke test: ran orchestrator on Titanic iterations 5 and 6 with zero manual approvals. Iter-5: GBM val_auc_roc=0.839 (insufficient/pivot). Iter-6: StackingClassifier val_auc_roc=0.856 (insufficient/continue, new best). Loop auto-continued correctly after iter-5. All gate checks passed. |
 
 **Invocation:** `run the orchestrator skill on projects/<project-name>`
 

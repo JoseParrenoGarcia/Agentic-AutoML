@@ -1,0 +1,24 @@
+{
+  "iteration": 4,
+  "timestamp": "2026-04-16T13:44:04.792765+00:00",
+  "status": "completed",
+  "plan_summary": "Refined RandomForest with stronger regularisation (max_depth=4, min_samples_leaf=15, min_samples_split=30, 150 estimators) and Cabin deck-letter feature extraction for Titanic binary classification",
+  "primary_metric": {
+    "name": "val_auc_roc",
+    "value": 0.8406455862977602,
+    "delta": -0.003887
+  },
+  "model_family": "RandomForest",
+  "reviewer_verdict": "insufficient",
+  "reviewer_reasoning": "Iteration 4 degraded the primary metric (AUC 0.841 vs 0.845, delta -0.004) and all secondary metrics worsened: accuracy -0.045, F1 -0.042, precision -0.077, recall unchanged. The stronger regularisation (max_depth 5->4, min_samples_leaf 10->15) reduced overfitting gap from 6.5% to 5.5% (still medium severity, learning curve still diverging), but at the cost of underfitting the validation set. The Cabin deck feature extraction added 6 new features but provided negligible signal (Deck_C through Deck_Rare all rank 15-21 with importance <0.002). Two consecutive RF iterations have now failed to surpass iteration 3. The 95% CI [0.766, 0.901] is wide (width 0.135), meaning the -0.004 regression is within noise, but the consistent decline across all secondary metrics suggests genuine degradation rather than random variation.",
+  "router_decision": "pivot",
+  "router_reasoning": "Two RF iterations (3 and 4) have been explored, with iteration 4 degrading vs 3. The RF regularisation path is yielding diminishing returns. Three model families tried so far (LR, GBM, RF). The natural next step is gradient-boosted trees with proper regularisation (XGBoost or LightGBM with early stopping, low learning rate, and strong L1/L2 penalties) which can often outperform RF on structured data. The engineered features (Title, FamilySize, HasCabin) should be retained as they proved useful; the deck-letter features can be dropped. Alternatively, a blending/stacking ensemble of the best LR and RF models could capture complementary signals.",
+  "risk_flags_summary": [
+    {
+      "type": "overfitting",
+      "severity": "medium",
+      "evidence": "Train/val AUC-ROC gap of 0.0488 (5.5%); learning curve trend diverging; train AUC 0.889 vs val 0.841. Slightly improved from 6.5% in iteration 3 but still medium severity."
+    }
+  ],
+  "best_iteration": 3
+}

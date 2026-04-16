@@ -29,7 +29,26 @@ You receive a project root path. Derive everything else:
 
 ## Step 1 — Locate the latest iteration with a completed report
 
-Scan `iterations/` for the newest iteration directory that has `reports/model-report.json`. Read `execution/manifest.json` to confirm `status: success`.
+Run this command first to get the correct iteration number — use the printed value for all subsequent steps:
+```bash
+.venv/bin/python3 -c "
+import pathlib, json
+iters = sorted(
+    [d for d in pathlib.Path('projects/titanic/iterations').iterdir()
+     if d.is_dir() and (d / 'reports/model-report.json').exists()],
+    key=lambda d: int(d.name.split('-')[1])
+)
+if iters:
+    n = iters[-1]
+    m = json.load(open(n / 'execution/manifest.json'))
+    print(f'TARGET_ITERATION={n.name}')
+    print(f'STATUS={m[\"status\"]}')
+else:
+    print('NO_ITERATION_FOUND')
+"
+```
+
+Use the `TARGET_ITERATION` value for all file paths in this run. Do NOT scan by modification time or rely on Glob ordering.
 
 **Stop condition:** If no iteration has a model report, report: "No evaluated iteration found." and stop.
 

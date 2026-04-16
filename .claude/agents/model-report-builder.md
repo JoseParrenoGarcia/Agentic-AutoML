@@ -27,11 +27,25 @@ You receive a project root path. Everything else you derive from it:
 
 ## Step 1 — Locate the latest successful iteration
 
+Run this command first to get the correct iteration number — use the printed value for all subsequent steps:
 ```bash
-# Find latest iteration with successful execution
+.venv/bin/python3 -c "
+import pathlib, json
+iters = sorted(
+    [d for d in pathlib.Path('projects/titanic/iterations').iterdir()
+     if d.is_dir() and (d / 'execution/manifest.json').exists()],
+    key=lambda d: int(d.name.split('-')[1])
+)
+for d in reversed(iters):
+    m = json.load(open(d / 'execution/manifest.json'))
+    if m['status'] == 'success':
+        print(f'TARGET_ITERATION={d.name}')
+        print(f'ITERATION_N={m[\"iteration\"]}')
+        break
+"
 ```
 
-Read `execution/manifest.json` for each iteration directory (newest first). Use the first one with `"status": "success"`. Read its `config.yaml` to get `task_type` and `iteration` number.
+Use the `TARGET_ITERATION` value for all file paths in this run. Do NOT scan by modification time or rely on Glob ordering.
 
 **Stop condition:** If no iteration has a successful manifest, report: "No successfully executed iteration found." and stop.
 
