@@ -51,12 +51,25 @@ Read all files before starting to plan. Do not interleave reads with reasoning.
 - `<project_root>/artifacts/data/profile.json` — read in full
 
 **If iteration > 1, also read:**
-- `<project_root>/memory/run-history.jsonl` — parse all lines as JSONL. Extract:
-  - What was tried, what metrics were achieved, what failed, and `feature_changes` per record.
+- Load run history using the structured summary helper:
+  ```bash
+  .venv/bin/python3 -c "
+  from src.review.history import load_run_history, summarise_history
+  import json
+  records = load_run_history('projects/<project>/memory/run-history.jsonl')
+  summary = summarise_history(records)
+  print(json.dumps(summary, indent=2))
+  print('---FULL RECORDS---')
+  for r in records:
+      print(json.dumps(r))
+  "
+  ```
+  The summary gives you: `total_iterations`, `best_iteration`, `best_metric_value`, `latest_verdict`, `latest_route`, `model_families_tried`, `metric_trajectory`, and `has_high_severity_flags`.
+  The full records give you per-iteration detail when needed.
   - Note if 3+ consecutive iterations show declining delta on the primary metric.
   - **The latest `reviewer_verdict`, `router_decision`, `router_reasoning`, and `best_iteration`** — these are the reviewer-router's strategic signals. Your plan MUST respect them (see Step 2b).
-- `<project_root>/memory/decision-log.md` — narrative context from prior iterations.
-- Do not repeat any approach already recorded in `run-history.jsonl` as tried unless it differs materially.
+- `<project_root>/memory/decision-log.md` — human-readable narrative context from prior iterations (one section per completed iteration).
+- Do not repeat any approach already recorded in the history as tried unless it differs materially.
 
 ### Step 2b — Interpret routing signals (iteration > 1 only)
 

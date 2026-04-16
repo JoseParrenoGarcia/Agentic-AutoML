@@ -1,0 +1,645 @@
+{
+  "schema_version": "1.1.0",
+  "iteration": 3,
+  "task_type": "binary_classification",
+  "generated_at": "2026-04-16T11:37:28.371124+00:00",
+  "headline_metrics": {
+    "primary": {
+      "name": "val_auc_roc",
+      "value": 0.844532279314888
+    },
+    "secondary": {
+      "val_accuracy": 0.8212290502793296,
+      "val_f1": 0.7714285714285715,
+      "val_precision": 0.7605633802816901,
+      "val_recall": 0.782608695652174
+    },
+    "train": {
+      "train_auc_roc": 0.9027760394502992,
+      "train_accuracy": 0.8412921348314607
+    },
+    "validation": {
+      "val_auc_roc": 0.844532279314888,
+      "val_accuracy": 0.8212290502793296,
+      "val_f1": 0.7714285714285715,
+      "val_precision": 0.7605633802816901,
+      "val_recall": 0.782608695652174
+    }
+  },
+  "overfitting_check": {
+    "train_val_gap": {
+      "metric": "val_auc_roc",
+      "train": 0.9027760394502992,
+      "val": 0.844532279314888,
+      "gap": 0.058244,
+      "gap_pct": 6.45
+    },
+    "severity": "medium",
+    "learning_curve_trend": "diverging",
+    "verdict": "Train/val gap: 0.0582 (6.5%) \u2014 severity: medium. Learning curve trend: diverging."
+  },
+  "leakage_indicators": {
+    "suspiciously_high_metric": false,
+    "feature_importance_anomalies": [],
+    "verdict": "No leakage indicators detected."
+  },
+  "calibration": {
+    "brier_score": 0.145484,
+    "reliability_curve": {
+      "bin_edges": [
+        0.0,
+        0.125,
+        0.25,
+        0.375,
+        0.5,
+        0.625,
+        0.75,
+        0.875,
+        1.0
+      ],
+      "mean_predicted": [
+        0.1803,
+        0.3324,
+        0.4389,
+        0.544,
+        0.6863,
+        0.8172,
+        0.9171
+      ],
+      "fraction_positive": [
+        0.1096,
+        0.0667,
+        0.3,
+        0.6154,
+        0.6667,
+        0.8182,
+        0.9333
+      ],
+      "bin_counts": [
+        0,
+        73,
+        15,
+        20,
+        13,
+        21,
+        22,
+        15
+      ]
+    }
+  },
+  "threshold_analysis": {
+    "roc_curve": {
+      "fpr": [
+        0.0,
+        0.0,
+        0.0,
+        0.0091,
+        0.0091,
+        0.0182,
+        0.0182,
+        0.0182,
+        0.0273,
+        0.0364,
+        0.0364,
+        0.0455,
+        0.0455,
+        0.0455,
+        0.0636,
+        0.0636,
+        0.0818,
+        0.0818,
+        0.1182,
+        0.1273,
+        0.1273,
+        0.1545,
+        0.1545,
+        0.1636,
+        0.1909,
+        0.1909,
+        0.2091,
+        0.2182,
+        0.2182,
+        0.2273,
+        0.2273,
+        0.2818,
+        0.3273,
+        0.3273,
+        0.5727,
+        0.6273,
+        0.6455,
+        0.6636,
+        0.7364,
+        0.7545,
+        0.7727,
+        0.7818,
+        0.7818,
+        0.8182,
+        0.8364,
+        0.8909,
+        0.9182,
+        0.9182,
+        0.9636,
+        1.0
+      ],
+      "tpr": [
+        0.0,
+        0.0145,
+        0.1304,
+        0.1304,
+        0.3478,
+        0.3768,
+        0.4058,
+        0.4203,
+        0.4203,
+        0.4348,
+        0.4638,
+        0.4638,
+        0.4783,
+        0.5072,
+        0.5652,
+        0.5797,
+        0.5797,
+        0.6667,
+        0.6812,
+        0.6812,
+        0.7536,
+        0.7536,
+        0.7826,
+        0.7971,
+        0.7971,
+        0.8116,
+        0.8116,
+        0.8261,
+        0.8406,
+        0.8406,
+        0.8551,
+        0.8551,
+        0.8696,
+        0.8841,
+        0.8841,
+        0.8841,
+        0.8986,
+        0.8986,
+        0.8986,
+        0.8986,
+        0.8986,
+        0.913,
+        0.9275,
+        0.9275,
+        0.942,
+        0.942,
+        0.942,
+        0.971,
+        0.971,
+        1.0
+      ],
+      "auc": 0.8445
+    },
+    "precision_recall_curve": {
+      "precision": [
+        0.3855,
+        0.3873,
+        0.3941,
+        0.3916,
+        0.3988,
+        0.4088,
+        0.4183,
+        0.4267,
+        0.4218,
+        0.4366,
+        0.446,
+        0.4559,
+        0.4733,
+        0.4959,
+        0.5083,
+        0.5259,
+        0.5398,
+        0.5545,
+        0.5755,
+        0.5922,
+        0.61,
+        0.625,
+        0.6452,
+        0.6556,
+        0.686,
+        0.6988,
+        0.7089,
+        0.7237,
+        0.7534,
+        0.7536,
+        0.7879,
+        0.7778,
+        0.7797,
+        0.8214,
+        0.8302,
+        0.8163,
+        0.8478,
+        0.8837,
+        0.8684,
+        0.8857,
+        0.9062,
+        0.9259,
+        0.9583,
+        0.9524,
+        0.9412,
+        0.9286,
+        0.9091,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "recall": [
+        1.0,
+        0.971,
+        0.971,
+        0.942,
+        0.942,
+        0.942,
+        0.9275,
+        0.9275,
+        0.8986,
+        0.8986,
+        0.8986,
+        0.8986,
+        0.8986,
+        0.8841,
+        0.8841,
+        0.8841,
+        0.8841,
+        0.8841,
+        0.8841,
+        0.8841,
+        0.8841,
+        0.8696,
+        0.8696,
+        0.8551,
+        0.8551,
+        0.8406,
+        0.8116,
+        0.7971,
+        0.7971,
+        0.7536,
+        0.7536,
+        0.7101,
+        0.6667,
+        0.6667,
+        0.6377,
+        0.5797,
+        0.5652,
+        0.5507,
+        0.4783,
+        0.4493,
+        0.4203,
+        0.3623,
+        0.3333,
+        0.2899,
+        0.2319,
+        0.1884,
+        0.1449,
+        0.1014,
+        0.058,
+        0.0
+      ]
+    },
+    "optimal_threshold": {
+      "threshold": 0.5,
+      "f1": 0.7714,
+      "accuracy": 0.8212,
+      "precision": 0.7606,
+      "recall": 0.7826
+    },
+    "default_threshold": {
+      "threshold": 0.5,
+      "f1": 0.7714,
+      "accuracy": 0.8212,
+      "precision": 0.7606,
+      "recall": 0.7826
+    },
+    "threshold_delta": {
+      "f1_gain": 0.0,
+      "description": "Optimal threshold 0.500 vs default 0.5: F1 improves by 0.0000"
+    }
+  },
+  "separation_quality": {
+    "ks_statistic": 0.6335,
+    "ks_pvalue": 0.0,
+    "discrimination_slope": 0.357,
+    "mean_prob_positive_class": 0.6671,
+    "mean_prob_negative_class": 0.3101,
+    "histogram_overlap": 0.3265,
+    "quality": "strong",
+    "verdict": "Separation quality: strong. KS=0.633, discrimination slope=0.357, histogram overlap=32.65%."
+  },
+  "bootstrap_ci": {
+    "intervals": {
+      "auc_roc": {
+        "mean": 0.8441,
+        "std": 0.0349,
+        "ci_lower": 0.7698,
+        "ci_upper": 0.9079,
+        "confidence": 0.95,
+        "n_bootstrap": 1000
+      },
+      "accuracy": {
+        "mean": 0.8218,
+        "std": 0.0287,
+        "ci_lower": 0.7654,
+        "ci_upper": 0.8771,
+        "confidence": 0.95,
+        "n_bootstrap": 1000
+      },
+      "f1": {
+        "mean": 0.7706,
+        "std": 0.0398,
+        "ci_lower": 0.687,
+        "ci_upper": 0.8415,
+        "confidence": 0.95,
+        "n_bootstrap": 1000
+      }
+    },
+    "primary_ci": {
+      "mean": 0.8441,
+      "std": 0.0349,
+      "ci_lower": 0.7698,
+      "ci_upper": 0.9079,
+      "confidence": 0.95,
+      "n_bootstrap": 1000
+    },
+    "primary_metric_name": "val_auc_roc",
+    "primary_point_estimate": 0.844532279314888,
+    "n_samples": 179,
+    "interpretation": "Primary metric 0.8445 has 95% CI [0.7698, 0.9079] (width=0.1381) based on 179 validation samples. Improvements smaller than 0.1381 may not be statistically meaningful."
+  },
+  "segment_analysis": {
+    "segments": []
+  },
+  "error_analysis": {
+    "task_type": "binary_classification",
+    "confusion_matrix": {
+      "tp": 54,
+      "fp": 17,
+      "fn": 15,
+      "tn": 93
+    },
+    "misclassification_patterns": [
+      {
+        "pattern": "overall_error_rate",
+        "detail": "17.88% (32/179)"
+      },
+      {
+        "pattern": "high_confidence_errors",
+        "detail": "10 errors among 89 high-confidence predictions (>80%)"
+      }
+    ],
+    "error_rate_by_confidence": [
+      {
+        "confidence_bin": "0.5-0.6",
+        "n": 27,
+        "error_rate": 0.2963
+      },
+      {
+        "confidence_bin": "0.6-0.7",
+        "n": 30,
+        "error_rate": 0.3333
+      },
+      {
+        "confidence_bin": "0.7-0.8",
+        "n": 33,
+        "error_rate": 0.1212
+      },
+      {
+        "confidence_bin": "0.8-0.9",
+        "n": 78,
+        "error_rate": 0.1154
+      },
+      {
+        "confidence_bin": "0.9-1.0",
+        "n": 11,
+        "error_rate": 0.0909
+      }
+    ]
+  },
+  "hardest_samples": [
+    {
+      "index": 41,
+      "y_true": 0.0,
+      "y_pred": 1.0,
+      "loss": 2.4577,
+      "y_prob_1": 0.9144
+    },
+    {
+      "index": 99,
+      "y_true": 1.0,
+      "y_pred": 0.0,
+      "loss": 2.0383,
+      "y_prob_1": 0.1303
+    },
+    {
+      "index": 150,
+      "y_true": 1.0,
+      "y_pred": 0.0,
+      "loss": 2.014,
+      "y_prob_1": 0.1334
+    },
+    {
+      "index": 112,
+      "y_true": 1.0,
+      "y_pred": 0.0,
+      "loss": 1.8378,
+      "y_prob_1": 0.1592
+    },
+    {
+      "index": 92,
+      "y_true": 1.0,
+      "y_pred": 0.0,
+      "loss": 1.8304,
+      "y_prob_1": 0.1603
+    },
+    {
+      "index": 139,
+      "y_true": 1.0,
+      "y_pred": 0.0,
+      "loss": 1.7796,
+      "y_prob_1": 0.1687
+    },
+    {
+      "index": 53,
+      "y_true": 1.0,
+      "y_pred": 0.0,
+      "loss": 1.7557,
+      "y_prob_1": 0.1728
+    },
+    {
+      "index": 2,
+      "y_true": 1.0,
+      "y_pred": 0.0,
+      "loss": 1.7516,
+      "y_prob_1": 0.1735
+    },
+    {
+      "index": 168,
+      "y_true": 0.0,
+      "y_pred": 1.0,
+      "loss": 1.6729,
+      "y_prob_1": 0.8123
+    },
+    {
+      "index": 28,
+      "y_true": 1.0,
+      "y_pred": 0.0,
+      "loss": 1.6711,
+      "y_prob_1": 0.188
+    }
+  ],
+  "feature_importance": {
+    "method": "gini_importance",
+    "model": "RandomForestClassifier",
+    "features": [
+      {
+        "name": "Title_Mr",
+        "importance": 0.264468,
+        "rank": 1
+      },
+      {
+        "name": "Sex",
+        "importance": 0.239007,
+        "rank": 2
+      },
+      {
+        "name": "Fare",
+        "importance": 0.099439,
+        "rank": 3
+      },
+      {
+        "name": "Pclass",
+        "importance": 0.087046,
+        "rank": 4
+      },
+      {
+        "name": "Title_Miss",
+        "importance": 0.058722,
+        "rank": 5
+      },
+      {
+        "name": "has_cabin",
+        "importance": 0.054083,
+        "rank": 6
+      },
+      {
+        "name": "Title_Mrs",
+        "importance": 0.04985,
+        "rank": 7
+      },
+      {
+        "name": "FamilySize",
+        "importance": 0.047528,
+        "rank": 8
+      },
+      {
+        "name": "Age",
+        "importance": 0.045139,
+        "rank": 9
+      },
+      {
+        "name": "SibSp",
+        "importance": 0.02221,
+        "rank": 10
+      },
+      {
+        "name": "Embarked_S",
+        "importance": 0.013704,
+        "rank": 11
+      },
+      {
+        "name": "Parch",
+        "importance": 0.009558,
+        "rank": 12
+      },
+      {
+        "name": "Embarked_Q",
+        "importance": 0.006742,
+        "rank": 13
+      },
+      {
+        "name": "Title_Rare",
+        "importance": 0.002504,
+        "rank": 14
+      }
+    ]
+  },
+  "prior_run_comparison": {
+    "previous_iteration": 2,
+    "deltas": [
+      {
+        "metric": "val_auc_roc",
+        "previous": 0.8218050065876152,
+        "current": 0.844532279314888,
+        "delta": 0.022727,
+        "improved": true
+      },
+      {
+        "metric": "val_accuracy",
+        "previous": 0.8100558659217877,
+        "current": 0.8212290502793296,
+        "delta": 0.011173,
+        "improved": true
+      },
+      {
+        "metric": "val_f1",
+        "previous": 0.75,
+        "current": 0.7714285714285715,
+        "delta": 0.021429,
+        "improved": true
+      },
+      {
+        "metric": "val_precision",
+        "previous": 0.7611940298507462,
+        "current": 0.7605633802816901,
+        "delta": -0.000631,
+        "improved": false
+      },
+      {
+        "metric": "val_recall",
+        "previous": 0.7391304347826086,
+        "current": 0.782608695652174,
+        "delta": 0.043478,
+        "improved": true
+      }
+    ]
+  },
+  "reviewer_summary": {
+    "headline_verdict": "improved",
+    "metric_summary": {
+      "primary_metric": 0.844532279314888,
+      "delta_vs_previous": 0.022727,
+      "delta_vs_baseline": null
+    },
+    "risk_flags": [
+      {
+        "type": "overfitting",
+        "severity": "medium",
+        "evidence": "Train/val gap of 6.45% on val_auc_roc"
+      }
+    ],
+    "plateau_signal": {
+      "detected": false,
+      "consecutive_stale_iterations": 0
+    }
+  },
+  "plots": {
+    "confusion_matrix": "plots/confusion_matrix.png",
+    "actual_vs_predicted": "plots/actual_vs_predicted.png",
+    "calibration_curve": "plots/calibration_curve.png",
+    "error_distribution": "plots/error_distribution.png",
+    "roc_curve": "plots/roc_curve.png",
+    "precision_recall_curve": "plots/precision_recall_curve.png",
+    "feature_diagnostics": [
+      "plots/feature_diagnostic_Fare.png",
+      "plots/feature_diagnostic_Pclass.png"
+    ],
+    "residual_vs_feature": [
+      "plots/residual_vs_Fare.png",
+      "plots/residual_vs_Pclass.png"
+    ]
+  }
+}
