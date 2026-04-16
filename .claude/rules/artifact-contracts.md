@@ -18,9 +18,28 @@ Required fields: per `templates/plans/iteration.yaml`. Validated by `src/plannin
 
 ## Contract 3: `run-history.jsonl`
 
-Written by post-run hooks. Read by Planner on iteration > 1.
+Written by Reviewer-Router agent via `src/review/writer.py`. Read by Planner on iteration > 1. Validated by `src/review/validator.py`.
 
-Append-only. Each line is a self-contained JSON object. Required fields per record: `iteration` (int), `timestamp` (ISO 8601), `status` (completed|failed), `plan_summary` (str), `primary_metric` (object with `name`, `value`, `delta`), `model_family` (str), `reviewer_verdict` (str), `router_decision` (str). Agents must not rewrite or delete existing lines.
+Append-only. Each line is a self-contained JSON object. Agents must not rewrite or delete existing lines.
+
+Required fields per record: `iteration` (int), `timestamp` (ISO 8601), `status` (completed|failed), `plan_summary` (str), `primary_metric` (object with `name`, `value`, `delta`), `model_family` (str), `reviewer_verdict` (sufficient|insufficient), `reviewer_reasoning` (str), `router_decision` (continue|rollback|pivot), `router_reasoning` (str), `risk_flags_summary` (list of {type, severity, evidence}), `best_iteration` (int).
+
+```json
+{
+  "iteration": "<int>",
+  "timestamp": "<ISO 8601>",
+  "status": "completed | failed",
+  "plan_summary": "<str>",
+  "primary_metric": {"name": "<str>", "value": "<float>", "delta": "<float | null>"},
+  "model_family": "<str>",
+  "reviewer_verdict": "sufficient | insufficient",
+  "reviewer_reasoning": "<str>",
+  "router_decision": "continue | rollback | pivot",
+  "router_reasoning": "<str>",
+  "risk_flags_summary": [{"type": "leakage | overfitting | underfitting | data_issue", "severity": "low | medium | high", "evidence": "<str>"}],
+  "best_iteration": "<int>"
+}
+```
 
 ## Contract 4: `model-report.json`
 

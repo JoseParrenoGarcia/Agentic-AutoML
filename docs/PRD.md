@@ -1263,13 +1263,26 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 ### M7 — Reviewer & Action Router
 **Type:** Major | **Outcome:** System judges outcomes and chooses the next loop step.
 
+> **Design decisions (finalised 2026-04-15):**
+> - Single combined `reviewer-router` Claude agent (not two separate agents).
+> - Two-tier verdict inspired by DS-STAR: `sufficient` (stop) / `insufficient` (keep iterating).
+> - Three routing actions when insufficient: `continue` (same direction), `rollback` (revert to prior best — informational flag to Planner), `pivot` (change strategy / model family).
+> - LLM holistic judgment for sufficiency — no hard metric thresholds; agent reasons like a senior DS using a 5-dimension rubric (risk flags, metric quality, improvement trajectory, strategy exhaustion, iteration budget).
+> - Full review applied even on iteration 1 (no special baseline-only mode).
+> - Max iterations: hardcoded default 10; future orchestrator skill will make configurable per project.
+> - Plateau detection: leverages M6's existing `plateau_signal` field (keep simple, iterate later).
+> - Output: appends to `run-history.jsonl` (Contract 3) via `src/review/writer.py` utility + writes per-iteration `reports/review-decision.json` for auditability.
+> - M7.6 added: update Planner agent to read `reviewer_verdict`, `router_decision`, `best_iteration` — without this update, routing signals are unused.
+> - Detailed plan: `tasks/plans/m7-reviewer-router.md`
+
 | Minor Milestone | Deliverable |
 |---|---|
-| M7.1 | Reviewer schema and decision rubric |
-| M7.2 | Reviewer with prior-run comparison logic |
-| M7.3 | Router schema and allowed actions |
-| M7.4 | Router decision logic and stop criteria |
-| M7.5 | Local-maxima detection helper integration |
+| M7.1 ✅ | Review-decision schema (`src/review/schemas.py`), rubric definition, `src/review/config.py` (MAX_ITERATIONS=10), `src/review/validator.py` (ReviewValidationError), Contract 3 extended with reviewer/router fields + JSON schema in `artifact-contracts.md`. |
+| M7.2 ✅ | Prior-run comparison logic: `src/review/history.py` (load + summarise run-history.jsonl), `src/review/comparator.py` (deltas, trends, best-so-far tracking). |
+| M7.3 ✅ | Router action definitions with trigger conditions captured in agent instructions and schemas. Three routes: `continue`, `rollback`, `pivot`. |
+| M7.4 ✅ | `reviewer-router` agent (`.claude/agents/reviewer-router.md`), JSONL writer (`src/review/writer.py` — validates then appends + writes per-iteration `review-decision.json`), 41 unit tests, smoke-tested on Titanic iteration-1 (verdict=insufficient, route=pivot to tree-based). |
+| M7.5 ✅ | Plateau detection helper (`src/review/plateau.py`) — reads M6's `plateau_signal` with history-computed fallback. |
+| M7.6 ✅ | Planner agent updated: Step 2b (interpret routing signals), Step 5 (model selection respects `router_decision`), Step 7 (self-validation checks routing compliance). |
 
 ### M8 — Project Memory
 **Type:** Major | **Outcome:** System learns from prior iterations and avoids repeating weak ideas.

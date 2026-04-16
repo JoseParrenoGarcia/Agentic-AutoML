@@ -51,9 +51,24 @@ Read all files before starting to plan. Do not interleave reads with reasoning.
 - `<project_root>/artifacts/data/profile.json` — read in full
 
 **If iteration > 1, also read:**
-- `<project_root>/memory/run-history.jsonl` — parse all lines as JSONL; extract what was tried, what metrics were achieved, what failed, and `feature_changes` per record. Note if 3+ consecutive iterations show declining delta on the primary metric.
+- `<project_root>/memory/run-history.jsonl` — parse all lines as JSONL. Extract:
+  - What was tried, what metrics were achieved, what failed, and `feature_changes` per record.
+  - Note if 3+ consecutive iterations show declining delta on the primary metric.
+  - **The latest `reviewer_verdict`, `router_decision`, `router_reasoning`, and `best_iteration`** — these are the reviewer-router's strategic signals. Your plan MUST respect them (see Step 2b).
 - `<project_root>/memory/decision-log.md` — narrative context from prior iterations.
 - Do not repeat any approach already recorded in `run-history.jsonl` as tried unless it differs materially.
+
+### Step 2b — Interpret routing signals (iteration > 1 only)
+
+Read the **last** record in `run-history.jsonl` and act on its `router_decision`:
+
+| `router_decision` | What it means for your plan |
+|--------------------|---------------------------|
+| `continue` | The current direction is working. Build on the previous iteration: refine feature engineering, tune hyperparameters, or add the next logical step within the same strategy class. |
+| `rollback` | The last iteration made things worse. Base your plan on iteration `best_iteration`'s approach (read its config.yaml and plan YAML). Try a **different variation** from that known-good state — do not repeat the failed approach. |
+| `pivot` | The current strategy class is exhausted or plateauing. Switch to a different model family or technique class entirely (e.g., linear → tree-based, or tree-based → gradient boosting). |
+
+Reference `router_reasoning` when justifying your hypotheses. If the router flagged a specific issue (e.g., "plateau after 3 iterations of logistic regression tuning"), your plan must address it.
 
 If `knowledge-base/` contains `.md` files relevant to the task type, read them before reasoning.
 
@@ -91,7 +106,7 @@ Choose **one model** per iteration. Multiple models in a single iteration makes 
 
 Iteration 1 establishes a simple, interpretable baseline. Choose a model appropriate to `task_type` and dataset characteristics. Justify the choice with evidence from the profile (dataset size, class balance, feature types, MI distribution). Do not introduce boosting, ensembles, or complex hyperparameter configurations before a baseline exists.
 
-From iteration 2 onwards, select based on what the prior run revealed. The model choice should respond to the evidence, not follow a predetermined sequence.
+From iteration 2 onwards, select based on what the prior run revealed and the reviewer-router's `router_decision`. If `continue`, stay in the same model family. If `pivot`, switch to a different model family. If `rollback`, return to the model family from `best_iteration`. The model choice should respond to the evidence, not follow a predetermined sequence.
 
 ---
 
@@ -114,6 +129,8 @@ Before writing any files, verify:
 - Every feature step references a specific column and profile finding
 - Every hypothesis includes a complexity assessment
 - If iteration = 1: plan frames itself as a baseline; no boosting, no ensembles, no interaction features
+- If iteration > 1 and `router_decision` is `pivot`: model family must differ from the previous iteration
+- If iteration > 1 and `router_decision` is `rollback`: plan must reference `best_iteration`'s approach as the base
 
 ---
 
