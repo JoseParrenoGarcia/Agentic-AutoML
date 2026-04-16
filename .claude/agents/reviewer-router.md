@@ -186,14 +186,16 @@ summary = append_review_decision(
     record,
     'projects/<project>/memory/run-history.jsonl',
     iteration_dir='projects/<project>/iterations/iteration-<n>',
+    decision_log_path='projects/<project>/memory/decision-log.md',
 )
 print(json.dumps(summary, indent=2))
 "
 ```
 
-This writes two things:
+This writes three things:
 1. Appends the record to `memory/run-history.jsonl` (project-level, for the Planner)
 2. Writes `iterations/iteration-<n>/reports/review-decision.json` (per-iteration, for auditability)
+3. Appends a human-readable entry to `memory/decision-log.md` (narrative trail for the Planner)
 
 **Stop condition:** If validation fails, fix the record and retry.
 

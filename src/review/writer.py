@@ -2,6 +2,7 @@
 
 Called by the reviewer-router agent after making its verdict and routing decision.
 Ensures every appended record passes Contract 3 validation before writing.
+Also maintains a human-readable decision-log.md alongside run-history.jsonl.
 """
 
 import json
@@ -12,21 +13,99 @@ from typing import Union
 from .validator import validate_review_decision, ReviewValidationError
 
 
+def format_decision_log_entry(record: dict) -> str:
+    """Format a review-decision record as a markdown decision-log entry.
+
+    Args:
+        record: A validated review-decision dict (Contract 3).
+
+    Returns:
+        Markdown string for one iteration entry (with trailing newline).
+    """
+    iteration = record.get("iteration", "?")
+    model_family = record.get("model_family", "unknown")
+    pm = record.get("primary_metric", {})
+    pm_name = pm.get("name", "metric")
+    pm_value = pm.get("value")
+    pm_delta = pm.get("delta")
+    verdict = record.get("reviewer_verdict", "unknown")
+    route = record.get("router_decision", "unknown")
+    plan_summary = record.get("plan_summary", "")
+    reasoning = record.get("reviewer_reasoning", "")
+    risk_flags = record.get("risk_flags_summary", [])
+
+    # Format metric line
+    value_str = f"{pm_value:.4f}" if pm_value is not None else "N/A"
+    if pm_delta is not None:
+        delta_str = f"{pm_delta:+.4f}"
+    else:
+        delta_str = "N/A (baseline)"
+
+    # Format risk flags
+    if risk_flags:
+        flag_types = [f"{f.get('severity', '?')}-{f.get('type', '?')}" for f in risk_flags]
+        flags_str = f"{len(risk_flags)} ({', '.join(flag_types)})"
+    else:
+        flags_str = "none"
+
+    # Truncate reasoning to keep entries scannable
+    reasoning_short = reasoning[:200] + "..." if len(reasoning) > 200 else reasoning
+
+    return (
+        f"## Iteration {iteration} — {model_family}\n"
+        f"**Metric:** {pm_name} = {value_str} (delta: {delta_str})  \n"
+        f"**Verdict:** {verdict} | **Route:** {route}  \n"
+        f"**Summary:** {plan_summary}  \n"
+        f"**Reasoning:** {reasoning_short}  \n"
+        f"**Risk flags:** {flags_str}\n\n"
+    )
+
+
+def append_decision_log(record: dict, log_path: Union[str, Path]) -> None:
+    """Append a formatted markdown entry to decision-log.md.
+
+    Args:
+        record: A validated review-decision dict (Contract 3).
+        log_path: Path to decision-log.md. Created with header if it does not exist.
+    """
+    path = Path(log_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Create with header if file doesn't exist or is empty
+    if not path.exists() or path.stat().st_size == 0:
+        header = (
+            "# Decision Log\n"
+            "<!-- Append-only. One section per completed iteration. -->\n\n"
+        )
+        with open(path, "w") as f:
+            f.write(header)
+
+    entry = format_decision_log_entry(record)
+    with open(path, "a") as f:
+        f.write(entry)
+
+
 def append_review_decision(
     record: dict,
     history_path: Union[str, Path],
     iteration_dir: Union[str, Path, None] = None,
+    decision_log_path: Union[str, Path, None] = None,
 ) -> dict:
     """Validate and append a review-decision record to run-history.jsonl.
 
     Also writes a copy as review-decision.json inside the iteration's reports/
     directory so each iteration is self-contained and auditable.
 
+    If decision_log_path is provided (or can be inferred from history_path),
+    also appends a human-readable entry to decision-log.md.
+
     Args:
         record: Review-decision dict matching Contract 3 extended schema.
         history_path: Path to run-history.jsonl. Created if it does not exist.
         iteration_dir: Path to the iteration directory (e.g., iterations/iteration-1).
             If provided, writes reports/review-decision.json there.
+        decision_log_path: Path to decision-log.md. If None, defaults to
+            decision-log.md in the same directory as history_path.
 
     Returns:
         Validation summary from validate_review_decision.
@@ -34,7 +113,7 @@ def append_review_decision(
     Raises:
         ReviewValidationError: If the record fails validation.
     """
-    # Validate before writing
+    # Validate before writing anything
     summary = validate_review_decision(record)
 
     path = Path(history_path)
@@ -50,6 +129,11 @@ def append_review_decision(
         review_path.parent.mkdir(parents=True, exist_ok=True)
         with open(review_path, "w") as f:
             json.dump(record, f, indent=2, default=str)
+
+    # Append to decision-log.md
+    if decision_log_path is None:
+        decision_log_path = path.parent / "decision-log.md"
+    append_decision_log(record, decision_log_path)
 
     return summary
 

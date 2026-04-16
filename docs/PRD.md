@@ -1200,7 +1200,7 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 ### M1 — Single-Project Runtime Skeleton
 **Type:** Major | **Outcome:** A project can be initialised and run through an empty but structured loop.
 
-> **Status: Deferred.** M1 was built incrementally inside M2. The Titanic project (`projects/titanic/`) acts as the runtime skeleton — `project.yaml`, raw data, processed data, artifacts, and iteration directories are all in place. M2 is now complete. Full orchestration (state loader/saver, iteration controller) remains for a future milestone. M1 milestones below remain as reference for what must eventually exist.
+> **Status: Deferred.** M1 was built incrementally inside M2. The Titanic project (`projects/titanic/`) acts as the runtime skeleton — `project.yaml`, raw data, processed data, artifacts, and iteration directories are all in place. M2 is now complete. Full orchestration (iteration controller, loop management) is now scoped in **M9 — Orchestrator Skill**. M1 milestones below remain as reference for what the runtime skeleton requires.
 
 | Minor Milestone | Deliverable |
 |---|---|
@@ -1284,37 +1284,75 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 | M7.5 ✅ | Plateau detection helper (`src/review/plateau.py`) — reads M6's `plateau_signal` with history-computed fallback. |
 | M7.6 ✅ | Planner agent updated: Step 2b (interpret routing signals), Step 5 (model selection respects `router_decision`), Step 7 (self-validation checks routing compliance). |
 
-### M8 — Project Memory
+### M8 — Project Memory ✅
 **Type:** Major | **Outcome:** System learns from prior iterations and avoids repeating weak ideas.
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M8.1 | Append-only run history (JSONL) |
-| M8.2 | Decision-log summaries (markdown) |
-| M8.3 | Retrieval helper for planner and reviewer inputs |
-| M8.4 | Tests for historical consistency and retrieval quality |
+| M8.1 ✅ | Append-only run history (JSONL). Delivered in M7 via `src/review/writer.py` + `append_review_decision()` + Contract 3 validation. |
+| M8.2 ✅ | Decision-log summaries (markdown). `append_decision_log()` in `src/review/writer.py`, auto-called from `append_review_decision()`. Writes structured markdown entries per iteration. Backfilled for iterations 1-2. |
+| M8.3 ✅ | Retrieval helper for planner and reviewer inputs. `src/review/history.py` provides `load_run_history()` + `summarise_history()`. Planner agent updated to use `summarise_history()` in Step 2. Reviewer-router passes `decision_log_path` to writer. |
+| M8.4 ✅ | 16 tests in `tests/test_memory.py`: decision-log creation, append, format, JSONL/markdown consistency, atomicity on validation failure, `summarise_history()` correctness, backfill consistency, round-trip, edge cases. |
 
-### M9 — Knowledge Base & Reference Ingestion
+### M9 — Orchestrator Skill
+**Type:** Major | **Outcome:** A single skill invocation runs the full ML experiment loop end-to-end, from raw data to final model, with no human intervention.
+
+> **Design decisions:**
+> - **Skill, not agent.** The orchestration logic is a fixed sequence of agent invocations with gate checks between steps. No LLM reasoning needed for the orchestration itself — the intelligence lives in the individual agents.
+> - **Full loop with auto-stop.** The skill loops automatically (planner → coder → executor → report-builder → reviewer-router), repeating until the reviewer returns `verdict=sufficient` or `MAX_ITERATIONS` is reached.
+> - **Includes dataset analyser.** If no `profile.json` exists, the skill runs the dataset-analyser agent first. This makes the skill truly end-to-end from raw CSV to final model.
+> - **No human gates.** Fully autonomous execution. Matches the benchmark goal of "at least 5 Kaggle datasets run fully without manual intervention."
+> - **Artifact gate checks.** Between each agent step, the skill verifies the expected output artifacts exist before proceeding. Fails loudly if an agent produces incomplete output.
+
+| Minor Milestone | Deliverable |
+|---|---|
+| M9.1 | Orchestrator skill file (`.claude/skills/orchestrator/SKILL.md`) defining the full loop sequence, artifact gate checks, and stop conditions. |
+| M9.2 | Error handling and recovery: what happens when an agent fails after retries, when artifacts are missing, or when the loop hits max iterations. Escalation to human on unrecoverable failure. |
+| M9.3 | Progress reporting: structured status output after each iteration (iteration number, metric, verdict, route, time elapsed). Final summary on loop completion. |
+| M9.4 | Smoke test: run the full orchestrator on Titanic from iteration 3 (existing state) through to `sufficient` or max iterations. Validate all artifacts, decision-log entries, and run-history consistency. |
+
+**Invocation:** `run the orchestrator skill on projects/<project-name>`
+
+**Skill workflow (per iteration):**
+```
+1. [If no profile.json] → dataset-analyser agent
+2. Planner agent → verify iteration-N.yaml + iteration-N.md exist
+3. Coder agent → verify iteration-N/src/ has all required files
+4. Executor agent → verify manifest.json status=success
+5. Model Report Builder → verify model-report.json + model-report.md exist
+6. Reviewer-Router → verify run-history.jsonl has N entries
+7. [If verdict=sufficient OR iteration >= MAX_ITERATIONS] → stop, report final summary
+8. [Else] → increment N, go to step 2
+```
+
+**Stop conditions:**
+- `reviewer_verdict = sufficient` — target met, package final model
+- `iteration >= MAX_ITERATIONS` (default 10) — budget exhausted, report best iteration
+- Unrecoverable agent failure — escalate to human with context
+
+**What this replaces:** The manual 5-agent chain that was run as the iteration-2 smoke test. The orchestrator encodes that exact sequence as a reusable, invocable skill.
+
+### M10 — Knowledge Base & Reference Ingestion
 **Type:** Major | **Outcome:** Reusable tactics and research findings inform multiple projects.
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M9.1 | Knowledge-base taxonomy and wiki entry template |
-| M9.2 | Reference inventory and source-ingestion conventions |
-| M9.3 | Wiki Scribe flow for approved insights |
-| M9.4 | Retrieval hooks from planner and reviewer |
+| M10.1 | Knowledge-base taxonomy and wiki entry template |
+| M10.2 | Reference inventory and source-ingestion conventions |
+| M10.3 | Wiki Scribe flow for approved insights |
+| M10.4 | Retrieval hooks from planner and reviewer |
 
-### M10 — Benchmark Validation
+### M11 — Benchmark Validation
 **Type:** Major | **Outcome:** System proves value on benchmark datasets.
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M10.1 | Select benchmark datasets and target metrics |
-| M10.2 | Run end-to-end baseline experiments |
-| M10.3 | AutoGluon comparison runs |
-| M10.4 | Benchmark retrospectives and gap analysis |
+| M11.1 | Select benchmark datasets and target metrics |
+| M11.2 | Run end-to-end baseline experiments |
+| M11.3 | AutoGluon comparison runs |
+| M11.4 | Benchmark retrospectives and gap analysis |
 
-### M11+ — Expansion Tracks
+### M12+ — Expansion Tracks
 **Type:** Future | **Outcome:** Broader capability.
 
 Candidate tracks (prioritised after M10):
