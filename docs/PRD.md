@@ -1448,13 +1448,28 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 ### M13 — Optuna Hyperparameter Tuning
 **Type:** Major | **Outcome:** When the Planner selects a model family, Optuna searches the hyperparameter space and the best params are used in training.
 
+> **Design decisions (finalised 2026-04-17):**
+> - **No new agent.** HP tuning is integrated into `model.py` via the Coder agent (Option A). The flow stays: Planner → Coder → Executor → Report Builder → Reviewer. No extra step.
+> - **Predefined search spaces** in `src/tuning/search_spaces.py` (Python, not YAML). Planner can override ranges via plan YAML.
+> - **Feasibility timing probe** built into every Optuna script: trains 1 trial on a subsample, estimates per-trial time, adapts `n_trials` to fit within budget. Falls back to manual HP if a single trial exceeds the time limit.
+> - **Study convergence callback** stops the entire study early if the last 10 trials show no improvement (> 0.1% delta).
+> - **Post-study analysis** is hybrid: deterministic Python (`src/tuning/analysis.py`) computes param importance, range exhaustion, and anti-patterns; LLM writes a short narrative summary.
+> - **Warm-starting across iterations** is Planner-mediated: reads prior `optuna_results.json` to narrow dead regions but not collapse the full space (explore-exploit balance).
+> - **Ensemble HP tuning is out of scope for M13.** When the plan uses ensembling (StackingClassifier etc.), `hyperparameter_strategy` must be `manual`. Ensemble HP tuning (per-estimator, meta-learner, full-stack) is a future enhancement — see M18+.
+> - Detailed plan: `tasks/plans/m13-optuna-hp-tuning.md`
+
 | Minor Milestone | Deliverable |
 |---|---|
-| M13.1 | `optuna_results.json` schema — best params, all trials (params + metric), HP importance scores per dimension. |
-| M13.2 | Optuna HP Tuner agent (`.claude/agents/optuna-tuner.md`): generates search space + Optuna script; existing Executor runs and debugs it. |
-| M13.3 | Plan YAML schema extended with `hyperparameter_strategy: optuna \| manual` and optional `optuna_budget` (`n_trials`, `time_limit_s`). Plan validator updated. |
-| M13.4 | Coder agent updated: reads `optuna_results.json` if present; inserts winning params into `config.yaml` and `model.py` instead of plan-specified manual params. |
-| M13.5 | Tests for schema, search space generation sanity checks, and Coder integration. |
+| M13.1 | `src/tuning/search_spaces.py` — predefined search spaces + pruning callback registry per model family. Unit tests for all spaces. |
+| M13.2 | `src/tuning/analysis.py` — post-study analysis (param importance, range exhaustion, anti-patterns, convergence). Unit tests. |
+| M13.3 | `optuna_results.json` Contract 7 schema added to `artifact-contracts.md`. Schema validator in `src/tuning/validator.py`. |
+| M13.4 | `templates/iteration/model_optuna.py` — Optuna-aware model template with timing probe, convergence callback, search+retrain flow. |
+| M13.5 | Plan YAML schema extended — `hyperparameter_strategy`, `optuna_budget`, `optuna_search_space_overrides`. Plan validator (`src/planning/validator.py`) updated. |
+| M13.6 | Coder agent instructions updated — template selection, search space merging, Optuna output contract. |
+| M13.7 | Planner agent instructions updated — when to tune (decision table), reading prior `optuna_results.json`, setting overrides, ensemble constraint. |
+| M13.8 | Executor output validator extended — check for `optuna_results.json` when HP tuning active. |
+| M13.9 | Model Report Builder updated — HP tuning section in `model-report.json` and `model-report.md`. |
+| M13.10 | End-to-end smoke test on Titanic — Planner requests Optuna for XGBoost, full loop completes, `optuna_results.json` is valid, report includes HP tuning section. |
 
 ### M14 — Kaggle Solutions Research
 **Type:** Major | **Outcome:** Kaggle CLI used to pull and summarise top competition solutions, feeding the knowledge base and informing early planning.
@@ -1502,6 +1517,7 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 **Type:** Future | **Outcome:** Broader capability.
 
 Candidate tracks (prioritised after M17):
+- **Ensemble hyperparameter tuning.** Extend M13 Optuna integration to support HP search for ensemble models (StackingClassifier, blending). Requires deciding: tune per-estimator, meta-learner, or full-stack? Multi-objective (metric + training time)? This is complex — deferred from M13 deliberately.
 - PDF Skill for paper ingestion
 - Optional open-source model routing
 - Time-series support
