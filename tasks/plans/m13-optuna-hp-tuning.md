@@ -19,12 +19,13 @@ The agentic loop (M0–M9) is complete. Currently, the Planner agent manually sp
 | New agent? | **No** | HP tuning is a variant of how model.py gets written. The Coder agent is extended, not replaced. |
 | Search space storage | **Python code** (`src/tuning/search_spaces.py`) | Type-safe, importable by generated scripts, testable. Planner can override ranges in plan YAML. |
 | Learnings extraction | **Hybrid** | Deterministic Python (`src/tuning/analysis.py`) computes structured fields (param importance, range exhaustion, anti-patterns). LLM writes a short narrative summary interpreting results for the Planner. |
-| CV during HP search | **Single train/val split** | Matches pipeline's existing split. Faster. Reviewer catches validation-set overfitting in the model report. |
+| CV during HP search | **Single inner split from training** | Avoids validation leakage. Optuna objective uses an inner tuning split carved from `X_train`/`y_train` (e.g., stratified when classification). The pipeline validation split remains untouched for final evaluation. |
 | Warm-starting | **Planner-mediated** | Planner reads prior `optuna_results.json` and adjusts search ranges in plan YAML. No Optuna-level study persistence. Balance of explore vs exploit — don't narrow to the exact previous range, but don't re-explore clearly dead regions. |
 | Ensemble HP tuning | **Out of scope for M13** | Single-model iterations only. When plan uses ensembling, `hyperparameter_strategy` must be `manual`. Tracked as future enhancement in PRD. |
 | Pruning | **Built into templates** | XGBoost/LightGBM use native pruning callbacks. Others use MedianPruner(n_startup_trials=5). Not left to LLM reasoning. |
 | Sampler | **TPESampler (default)** | Good for most cases. Planner can override if needed. For < 20 trials, effectively similar to random. |
 | Reproducibility | **Fixed seed** | `TPESampler(seed=config['random_seed'])` — aligns with existing pipeline reproducibility contract. |
+| Dependency strategy | **Global environment (repo requirements)** | The current Executor runs iteration code in the repo Python environment (no per-iteration install step). Add `optuna` to the repo `requirements.txt` so tuning runs reliably; iteration `requirements.txt` remains an audit trail. |
 
 ---
 
@@ -71,6 +72,10 @@ model_steps:
     optuna_budget:                       # used when strategy is "optuna"
       n_trials: 50                       # default: 50
       time_limit_s: 600                  # default: 600 (10 min), hard cap
+      proxy_training:                    # optional: make tuning feasible for slow models
+        enabled: true
+        row_subsample_fraction: 0.3      # train on a sample during tuning only
+        max_estimators: 300              # cap iterations/estimators during tuning only
     optuna_search_space_overrides:       # optional: Planner narrows/expands ranges
       max_depth: [4, 7]                  # override default [3, 10]
       learning_rate: [0.01, 0.1]         # override default [0.001, 0.3]
@@ -91,6 +96,43 @@ The Planner sets `hyperparameter_strategy: manual` (or omits it) when:
 - Score is already near the AutoGluon ceiling
 - Feature engineering is the bottleneck, not model config
 - Plan uses ensembling (StackingClassifier etc.)
+
+Additional Planner constraint:
+- Prefer HP tuning only after feature engineering stabilises (avoid spending budget tuning a moving pipeline).
+
+---
+
+## config.yaml Integration (Runtime Contract)
+
+The generated iteration code reads only `config.yaml` at runtime. Therefore, when `hyperparameter_strategy: optuna` is selected in the plan, the Coder must also write a `tuning` block into `config.yaml`.
+
+Recommended shape (exact field names can be finalised during implementation; include enough info to avoid any dependence on the plan YAML at runtime):
+
+```yaml
+hyperparameters: {}  # baseline/default params (used for fallback + comparison)
+
+tuning:
+  strategy: optuna | manual
+  metric_name: "val_auc_roc"           # must match evaluate.py primary metric name
+  direction: maximize | minimize
+  budget:
+    n_trials: 50
+    time_limit_s: 600
+  tuning_split:
+    method: stratified | random
+    val_ratio: 0.2
+  proxy_training:
+    enabled: true
+    row_subsample_fraction: 0.3
+    max_estimators: 300
+  search_space_overrides: {}
+  warm_start:
+    enqueue_baseline: true
+    enqueue_previous_best: true
+```
+
+Key requirement:
+- The Optuna objective **must** use the inner tuning split from training, not the pipeline validation split.
 
 ---
 
@@ -168,6 +210,9 @@ PRUNING_CALLBACKS = {
 
 The Planner can override individual ranges via `optuna_search_space_overrides` in the plan YAML. The Coder merges overrides with defaults.
 
+Search space guardrail (important for reliability):
+- Some models require **conditional** hyperparameters (e.g., LogisticRegression: `penalty`/`solver`/`l1_ratio` combos). The search space implementation must enforce valid combos to avoid wasting trials on FAIL states.
+
 ---
 
 ## Feasibility Timing Probe
@@ -216,6 +261,11 @@ if estimated_per_trial_s > time_limit_s:
 
 This feasibility data is recorded in `optuna_results.json` so the Reviewer and Planner can see compute constraints.
 
+Feasibility policy:
+- If the probe suggests the requested budget is infeasible, reduce `effective_n_trials`.
+- If a single trial is estimated to exceed the time limit, fall back to `manual` (train once with baseline/default hyperparameters).
+- For slow models, prefer proxy tuning during Optuna (row subsample and/or capped estimators) followed by full retrain.
+
 ---
 
 ## Study Convergence Early Stopping
@@ -255,6 +305,9 @@ Computes from the Optuna study object:
 3. **Anti-patterns** — identify param combinations where all trials were pruned or scored in bottom 20%. Output as structured rules: `{"condition": "max_depth > 8 AND learning_rate > 0.1", "outcome": "always_underperformed", "n_trials": 5}`.
 4. **Convergence info** — was the study stopped early? How many trials before best was found?
 
+Safety guardrails for analysis:
+- Only compute param importance / anti-pattern mining if there are enough completed trials (e.g., >= 10 COMPLETE trials). Otherwise emit empty structures plus a short reason.
+
 ### LLM layer: Coder agent or Report Builder
 
 After the deterministic analysis writes structured fields to `optuna_results.json`, the Model Report Builder (or the Coder's script epilogue) writes a short narrative summary:
@@ -274,6 +327,16 @@ This narrative is included in `optuna_results.json` under `summary_narrative` an
   "model_family": "<str>",
   "direction": "maximize | minimize",
   "metric_name": "<str>",
+
+  "tuning_protocol": {
+    "tuning_split": {"method": "stratified | random", "val_ratio": "<float>"},
+    "uses_inner_split": "<bool>",
+    "proxy_training": {
+      "enabled": "<bool>",
+      "row_subsample_fraction": "<float | null>",
+      "max_estimators": "<int | null>"
+    }
+  },
 
   "budget": {
     "requested_n_trials": "<int>",
@@ -301,6 +364,12 @@ This narrative is included in `optuna_results.json` under `summary_narrative` an
     "number": "<int>",
     "value": "<float>",
     "params": {"<param_name>": "<value>"}
+  },
+
+  "comparisons": {
+    "baseline_inner": {"metric": "<str>", "value": "<float>"},
+    "best_inner": {"metric": "<str>", "value": "<float>"},
+    "final_outer": {"metric": "<str>", "value": "<float>"}
   },
 
   "param_importance": {"<param_name>": "<float>"},
@@ -356,10 +425,15 @@ Add to Coder instructions:
 - **Output contract.** Must produce `optuna_results.json` in addition to standard outputs.
 - **Feasibility probe.** Always include the timing probe in generated code.
 - **Pruning callbacks.** Use model-family-specific callbacks from `PRUNING_CALLBACKS` registry.
+- **Inner-split objective.** The Optuna objective must create an inner tuning split from training data (do not evaluate trials on the pipeline validation split).
+- **Warm-start enqueues.** Enqueue baseline params and previous best params (when available) before free search.
 
 ### Executor agent — no changes
 
 Standard two-stage repair handles Optuna scripts (they're just Python). Output validator extended to check for `optuna_results.json` when config says `hyperparameter_strategy: optuna`.
+
+Dependency note:
+- The current Executor does not install per-iteration dependencies. `optuna` must be available in the environment (repo `requirements.txt`).
 
 ### Model Report Builder updates
 
@@ -397,6 +471,9 @@ Reviews the model report as usual. The HP tuning section gives additional contex
 - **No dependency on:** M10 (cost tracking), M11 (human-in-loop), M12 (AutoGluon baseline)
 - **Enhances:** M17 (benchmark validation) — tuned models should outperform default HP models
 
+Implementation dependency:
+- Add `optuna` to the repo `requirements.txt` (global env). Start simple; additional model-family packages can be added later as needed.
+
 ## Risks
 
 | Risk | Mitigation |
@@ -404,5 +481,12 @@ Reviews the model report as usual. The HP tuning section gives additional contex
 | Optuna import errors in generated code | Ensure `optuna` is in project `requirements.txt`. Executor handles import errors via Stage 1 repair. |
 | Timing probe gives bad estimates | Conservative 2x multiplier. Fallback to manual if probe > time_limit. |
 | Generated Optuna code is subtly wrong (e.g., data leakage in objective) | Template is reviewed and tested. Coder fills in model-specific parts only. |
+| Tuning overfits by double-dipping validation | Objective uses an inner tuning split carved from training; outer pipeline validation is used only once for final evaluation. This protocol is recorded in `optuna_results.json`. |
 | LLM ignores `hyperparameter_strategy: optuna` in plan | Coder agent instructions make this explicit. Output validator enforces optuna_results.json presence. |
 | Too many trials produce unreadable results | Cap `all_trials` output. Summary narrative distills key insights. |
+
+---
+
+## Open Questions / Implementation Notes
+
+- PRD consistency: ensure the PRD’s Optuna tuner section describes the integrated-in-`model.py` approach (Option A) to avoid implying an extra pipeline step.

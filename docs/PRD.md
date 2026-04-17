@@ -629,23 +629,27 @@ estimated_remaining_iterations: <int>
 
 ### 6.12 Optuna HP Tuner
 
-**Purpose:** When the Planner selects a model family and sets `hyperparameter_strategy: optuna`, run an Optuna search within a configured budget and return the best hyperparameter set.
+**Purpose:** When the Planner selects a model family and sets `hyperparameter_strategy: optuna`, run an Optuna search within a configured budget **inside the iteration training code**, then train the final model using the best hyperparameters and return both the trained model artifacts and tuning learnings.
 
 **Inputs:**
 - Current plan (`iteration-<n>.yaml`) including `hyperparameter_strategy`, `optuna_budget` (`n_trials`, `time_limit_s`)
-- `profile.json` (for feature count and task type)
-- Prior `optuna_results.json` files (for warm-starting search ranges on subsequent iterations)
+- `profile.json` (for task type and dataset context)
+- (Planner-mediated warm start) Prior `optuna_results.json` files inform subsequent iteration plans (search-space overrides, budget adjustments)
 
 **Outputs:**
-- `iterations/iteration-<n>/outputs/optuna_results.json` — best params, all trial records (params + metric), HP importance scores per dimension
+- `iterations/iteration-<n>/outputs/optuna_results.json` — best params, trial records, and tuning learnings (importance, anti-patterns)
 
 **Responsibilities:**
-- Generate a Python script with an appropriate Optuna search space for the chosen model family
-- Hand the script to the Executor agent for running and repair
-- Write `optuna_results.json` after successful execution
+- The Coder-generated iteration code performs HP tuning when configured:
+  - Define an Optuna search space appropriate for the selected model family
+  - Run the Optuna study within the configured budget
+  - Retrain the final model using the best hyperparameters
+  - Write `optuna_results.json` to `outputs/` for the Planner/Reviewer to learn from
 
 **Integration:**
-- Coder agent: reads `optuna_results.json` if present; inserts winning params into `config.yaml` and `model.py` instead of plan-specified manual params
+- Planner agent: optionally selects `hyperparameter_strategy: optuna` when refinement is warranted (not default)
+- Coder agent: when `hyperparameter_strategy: optuna`, generates an Optuna-aware `model.py` that runs tuning + final training and writes `optuna_results.json`
+- Executor agent: runs the iteration as usual; no special-case execution step is introduced
 
 **Plan YAML extension:**
 ```yaml
@@ -657,7 +661,7 @@ optuna_budget:
 
 **Non-responsibilities:**
 - Choosing the model family — that is the Planner's job
-- Running the final training run — that is the Coder + Executor's job
+- Running iteration code outside the standard loop — tuning is executed as part of the iteration's normal training step
 
 ---
 
