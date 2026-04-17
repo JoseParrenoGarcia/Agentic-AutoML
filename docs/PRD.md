@@ -1,7 +1,7 @@
 # Agentic AutoML — Product Requirements Document
 
-**Status:** Draft v0.4
-**Last updated:** 2026-04-12
+**Status:** Draft v0.5
+**Last updated:** 2026-04-16
 
 ---
 
@@ -265,6 +265,9 @@ Each agent owns one decision class, receives structured file inputs, and emits m
 **Non-responsibilities:**
 - Choosing the modelling strategy
 - Mutating the dataset beyond read-only profiling
+
+**Human Semantic Enrichment Gate (final step):**
+After `profile.json` is written, the analyser emits a structured question list covering ambiguous columns, unknown domain context, and business meaning of high-importance features. The human answers inline; answers are appended to `profile.json` under a `semantic_enrichment` key before the Planner is invoked. Configurable: set `semantic_enrichment: false` in `project.yaml` to skip. When skipped, the analyser proceeds immediately to the Planner.
 
 **Error handling:** If dataset cannot be loaded or parsed, emit a structured error artifact and halt. Do not guess schema.
 
@@ -549,9 +552,9 @@ estimated_remaining_iterations: <int>
 
 ---
 
-### 6.9 Researcher
+### 6.9 arXiv & External Researcher
 
-**Purpose:** Investigate external references and bring back tactics relevant to the active problem type.
+**Purpose:** Investigate arXiv papers, GitHub repositories, and other external references to bring back tactics relevant to the active problem type. Kaggle-specific research is handled by the separate Kaggle Researcher agent (6.12).
 
 **Inputs:**
 - Problem description and dataset characteristics
@@ -594,6 +597,85 @@ estimated_remaining_iterations: <int>
 5. Store in knowledge base with YAML frontmatter metadata
 
 **Design note:** Based on the existing `newsletter-engine` PDF import skill pattern. Prioritises text-extractable content. Does not attempt to parse figures or equations.
+
+---
+
+### 6.11 AutoGluon Baseline Runner
+
+**Purpose:** Run AutoGluon with default settings on the project dataset before the agentic loop begins. Provides a performance ceiling, a ranked leaderboard of model families, and feature importance — all of which the Planner reads when forming iteration-1 hypotheses.
+
+**Inputs:**
+- `project.yaml` (target column, task type, data paths)
+- Raw training dataset
+
+**Outputs:**
+- `artifacts/baselines/autogluon/baseline-report.json` — structured leaderboard (model family, metric per candidate), feature importance from best model, fit duration
+- `artifacts/baselines/autogluon/baseline-report.md` — human-readable summary of findings
+
+**Responsibilities:**
+- Generate a Python script that trains AutoGluon on the project dataset
+- Hand the script to the Executor agent for running and two-stage repair (same loop used by the Coder agent)
+- Produce the structured baseline report after successful execution
+
+**Integration:**
+- Orchestrator skill: runs this agent once before iteration-1 if no `baseline-report.json` exists
+- Planner agent (Step 2): reads `baseline-report.json` if present; references top model families and feature importance in hypothesis generation
+
+**Non-responsibilities:**
+- Iterating or tuning AutoGluon beyond default settings
+- Making the final model selection — that is the Planner's job
+
+---
+
+### 6.12 Optuna HP Tuner
+
+**Purpose:** When the Planner selects a model family and sets `hyperparameter_strategy: optuna`, run an Optuna search within a configured budget **inside the iteration training code**, then train the final model using the best hyperparameters and return both the trained model artifacts and tuning learnings.
+
+**Inputs:**
+- Current plan (`iteration-<n>.yaml`) including `hyperparameter_strategy`, `optuna_budget` (`n_trials`, `time_limit_s`)
+- `profile.json` (for task type and dataset context)
+- (Planner-mediated warm start) Prior `optuna_results.json` files inform subsequent iteration plans (search-space overrides, budget adjustments)
+
+**Outputs:**
+- `iterations/iteration-<n>/outputs/optuna_results.json` — best params, trial records, and tuning learnings (importance, anti-patterns)
+
+**Responsibilities:**
+- The Coder-generated iteration code performs HP tuning when configured:
+  - Define an Optuna search space appropriate for the selected model family
+  - Run the Optuna study within the configured budget
+  - Retrain the final model using the best hyperparameters
+  - Write `optuna_results.json` to `outputs/` for the Planner/Reviewer to learn from
+
+**Integration:**
+- Planner agent: optionally selects `hyperparameter_strategy: optuna` when refinement is warranted (not default)
+- Coder agent: when `hyperparameter_strategy: optuna`, generates an Optuna-aware `model.py` that runs tuning + final training and writes `optuna_results.json`
+- Executor agent: runs the iteration as usual; no special-case execution step is introduced
+
+**Plan YAML extension:**
+```yaml
+hyperparameter_strategy: optuna | manual   # default: manual
+optuna_budget:
+  n_trials: 50                             # default: 50
+  time_limit_s: 600                        # default: 600 (10 min)
+```
+
+**Non-responsibilities:**
+- Choosing the model family — that is the Planner's job
+- Running iteration code outside the standard loop — tuning is executed as part of the iteration's normal training step
+
+---
+
+### 6.13 Kaggle Researcher
+
+**Purpose:** Use the Kaggle CLI to explore public competition notebooks, leaderboards, and top solutions. Extract feature engineering and modelling patterns and store structured summaries in the knowledge base.
+
+**Note:** Full specification is deferred to M14 implementation time, after the Kaggle CLI's accessible endpoints and data formats are explored and documented. The agent scope, inputs, and outputs will be defined then.
+
+**Provisional responsibilities:**
+- Pull top-N public notebooks for a given competition slug via Kaggle CLI
+- Parse notebooks for feature engineering tricks and model/ensemble choices
+- Store structured summaries in `knowledge-base/` with standard frontmatter
+- Produce a `kaggle-research-summary.md` the Planner reads before iteration 1
 
 ---
 
@@ -1335,31 +1417,111 @@ Each minor milestone should be scoped to a single reviewable PR. PRs must be tar
 
 **What this replaces:** The manual 5-agent chain that was run as the iteration-2 smoke test. The orchestrator encodes that exact sequence as a reusable, invocable skill.
 
-### M10 — Knowledge Base & Reference Ingestion
+### M10 — Token & Cost Tracking
+**Type:** Major | **Outcome:** Every iteration and the full pipeline reports token consumption and estimated cost.
+
+| Minor Milestone | Deliverable |
+|---|---|
+| M10.1 | Add `token_usage` block to `execution/manifest.json` Contract 6: `input_tokens`, `output_tokens`, `total_tokens`, `estimated_cost_usd`, `model_id`. Update `artifact-contracts.md`. |
+| M10.2 | Orchestrator skill emits cumulative token + cost totals in the per-iteration status line and final summary. |
+| M10.3 | `projects/<id>/memory/cost-report.jsonl` — append-only, one record per iteration, readable across the full project lifetime. |
+| M10.4 | Tests for token capture, cost calculation (configurable price-per-token table), and JSONL append correctness. |
+
+### M11 — Human-in-the-Loop Dataset Analysis
+**Type:** Major | **Outcome:** Humans can enrich the dataset profile with business context before planning begins.
+
+| Minor Milestone | Deliverable |
+|---|---|
+| M11.1 | Extend `profile.json` schema (Contract 1) with optional `semantic_enrichment` key — list of `{column, question, human_answer}` objects. |
+| M11.2 | Dataset Analyser agent updated to emit a structured question list for ambiguous/unrecognised columns after writing `profile.json`, then pause for human input. |
+| M11.3 | `project.yaml` gains `semantic_enrichment: true \| false` (default `true`). When `false`, analyser skips the gate and proceeds immediately. |
+| M11.4 | Tests for enrichment schema, question generation heuristics (null-heavy columns, unknown dtypes, high-cardinality strings), and answer injection into `profile.json`. |
+
+### M12 — AutoGluon Baseline Pass
+**Type:** Major | **Outcome:** Before the agentic loop starts, AutoGluon runs and its top model candidates inform iteration-1 planning.
+
+| Minor Milestone | Deliverable |
+|---|---|
+| M12.1 | AutoGluon Baseline Runner agent (`.claude/agents/autogluon-baseline.md`). Agent writes a Python script; existing Executor agent runs + debugs it via the two-stage repair loop. |
+| M12.2 | `artifacts/baselines/autogluon/baseline-report.json` schema — leaderboard (model family, metric per candidate), feature importance from best model, fit duration. |
+| M12.3 | `baseline-report.md` — human-readable summary of AutoGluon findings. |
+| M12.4 | Orchestrator skill updated: if no `baseline-report.json` exists, run autogluon-baseline before iteration-1 planner. Gate check added. |
+| M12.5 | Planner agent updated (Step 2): reads `baseline-report.json` if present; references best AutoGluon model families in hypothesis generation. |
+| M12.6 | Tests for baseline schema validation and Planner integration. |
+
+### M13 — Optuna Hyperparameter Tuning
+**Type:** Major | **Outcome:** When the Planner selects a model family, Optuna searches the hyperparameter space and the best params are used in training.
+
+> **Design decisions (finalised 2026-04-17):**
+> - **No new agent.** HP tuning is integrated into `model.py` via the Coder agent (Option A). The flow stays: Planner → Coder → Executor → Report Builder → Reviewer. No extra step.
+> - **Predefined search spaces** in `src/tuning/search_spaces.py` (Python, not YAML). Planner can override ranges via plan YAML.
+> - **Feasibility timing probe** built into every Optuna script: trains 1 trial on a subsample, estimates per-trial time, adapts `n_trials` to fit within budget. Falls back to manual HP if a single trial exceeds the time limit.
+> - **Study convergence callback** stops the entire study early if the last 10 trials show no improvement (> 0.1% delta).
+> - **Post-study analysis** is hybrid: deterministic Python (`src/tuning/analysis.py`) computes param importance, range exhaustion, and anti-patterns; LLM writes a short narrative summary.
+> - **Warm-starting across iterations** is Planner-mediated: reads prior `optuna_results.json` to narrow dead regions but not collapse the full space (explore-exploit balance).
+> - **Ensemble HP tuning is out of scope for M13.** When the plan uses ensembling (StackingClassifier etc.), `hyperparameter_strategy` must be `manual`. Ensemble HP tuning (per-estimator, meta-learner, full-stack) is a future enhancement — see M18+.
+> - Detailed plan: `tasks/plans/m13-optuna-hp-tuning.md`
+
+| Minor Milestone | Deliverable |
+|---|---|
+| M13.1 | `src/tuning/search_spaces.py` — predefined search spaces + pruning callback registry per model family. Unit tests for all spaces. |
+| M13.2 | `src/tuning/analysis.py` — post-study analysis (param importance, range exhaustion, anti-patterns, convergence). Unit tests. |
+| M13.3 | `optuna_results.json` Contract 7 schema added to `artifact-contracts.md`. Schema validator in `src/tuning/validator.py`. |
+| M13.4 | `templates/iteration/model_optuna.py` — Optuna-aware model template with timing probe, convergence callback, search+retrain flow. |
+| M13.5 | Plan YAML schema extended — `hyperparameter_strategy`, `optuna_budget`, `optuna_search_space_overrides`. Plan validator (`src/planning/validator.py`) updated. |
+| M13.6 | Coder agent instructions updated — template selection, search space merging, Optuna output contract. |
+| M13.7 | Planner agent instructions updated — when to tune (decision table), reading prior `optuna_results.json`, setting overrides, ensemble constraint. |
+| M13.8 | Executor output validator extended — check for `optuna_results.json` when HP tuning active. |
+| M13.9 | Model Report Builder updated — HP tuning section in `model-report.json` and `model-report.md`. |
+| M13.10 | End-to-end smoke test on Titanic — Planner requests Optuna for XGBoost, full loop completes, `optuna_results.json` is valid, report includes HP tuning section. |
+
+### M14 — Kaggle Solutions Research
+**Type:** Major | **Outcome:** Kaggle CLI used to pull and summarise top competition solutions, feeding the knowledge base and informing early planning.
+
+> Full spec written at M14 implementation time after exploring Kaggle CLI capabilities.
+
+| Minor Milestone | Deliverable |
+|---|---|
+| M14.1 | Explore Kaggle CLI — document accessible endpoints (kernels, leaderboards, datasets, notebooks). Write a capabilities summary. |
+| M14.2 | Kaggle Researcher agent (`.claude/agents/kaggle-researcher.md`) — pulls top-N public notebooks for a given competition slug. |
+| M14.3 | Extraction layer — parse notebooks for feature engineering and modelling patterns; store structured summaries in `knowledge-base/`. |
+| M14.4 | Planner integration — reads Kaggle research summaries alongside knowledge base before iteration 1. |
+
+### M15 — arXiv & External Research
+**Type:** Major | **Outcome:** Relevant ML papers and GitHub repos are ingested, summarised, and made retrievable by agents.
+
+| Minor Milestone | Deliverable |
+|---|---|
+| M15.1 | Rename Researcher agent (6.9) to "arXiv & External Researcher"; update scope to include GitHub READMEs and technical blog posts in addition to arXiv. |
+| M15.2 | Research workflow — given problem type and dataset characteristics, agent identifies 3–5 relevant papers/repos, fetches HTML versions, extracts reusable tactics. |
+| M15.3 | Structured research notes stored in `knowledge-base/` with standard frontmatter. |
+| M15.4 | Planner integration — reads research summaries when planning feature engineering and model selection on iteration 1. |
+
+### M16 — Knowledge Base & Reference Ingestion
 **Type:** Major | **Outcome:** Reusable tactics and research findings inform multiple projects.
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M10.1 | Knowledge-base taxonomy and wiki entry template |
-| M10.2 | Reference inventory and source-ingestion conventions |
-| M10.3 | Wiki Scribe flow for approved insights |
-| M10.4 | Retrieval hooks from planner and reviewer |
+| M16.1 | Knowledge-base taxonomy and wiki entry template |
+| M16.2 | Reference inventory and source-ingestion conventions |
+| M16.3 | Wiki Scribe flow for approved insights |
+| M16.4 | Retrieval hooks from planner and reviewer |
 
-### M11 — Benchmark Validation
+### M17 — Benchmark Validation
 **Type:** Major | **Outcome:** System proves value on benchmark datasets.
 
 | Minor Milestone | Deliverable |
 |---|---|
-| M11.1 | Select benchmark datasets and target metrics |
-| M11.2 | Run end-to-end baseline experiments |
-| M11.3 | AutoGluon comparison runs |
-| M11.4 | Benchmark retrospectives and gap analysis |
+| M17.1 | Select benchmark datasets and target metrics |
+| M17.2 | Run end-to-end baseline experiments |
+| M17.3 | AutoGluon comparison runs |
+| M17.4 | Benchmark retrospectives and gap analysis |
 
-### M12+ — Expansion Tracks
+### M18+ — Expansion Tracks
 **Type:** Future | **Outcome:** Broader capability.
 
-Candidate tracks (prioritised after M10):
-- Researcher agent for external reference investigation
+Candidate tracks (prioritised after M17):
+- **Ensemble hyperparameter tuning.** Extend M13 Optuna integration to support HP search for ensemble models (StackingClassifier, blending). Requires deciding: tune per-estimator, meta-learner, or full-stack? Multi-objective (metric + training time)? This is complex — deferred from M13 deliberately.
 - PDF Skill for paper ingestion
 - Optional open-source model routing
 - Time-series support
